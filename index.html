@@ -101,8 +101,8 @@ const toC=v=>Math.round((parseFloat(String(v).replace(',','.'))||0)*100);
 const num=v=>parseFloat(String(v).replace(',','.'))||0;
 const uid=()=>Math.random().toString(36).slice(2,10);
 const today=()=>new Date().toISOString().slice(0,10);
-const plabel=id=>{const[y,m]=id.split('-');return MONTHS[+m-1]+' '+y};
-const pshort=id=>{const[y,m]=id.split('-');return MONTHS[+m-1].slice(0,3).toUpperCase()+" '"+y.slice(2)};
+const plabel=id=>{if(id==='open')return'Αρχικό υπόλοιπο';const[y,m]=id.split('-');return MONTHS[+m-1]+' '+y};
+const pshort=id=>{if(id==='open')return'ΑΡΧ. ΥΠΟΛ.';const[y,m]=id.split('-');return MONTHS[+m-1].slice(0,3).toUpperCase()+" '"+y.slice(2)};
 const fdate=d=>d?d.slice(0,10).split('-').reverse().join('/'):'';
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 function toast(m){$$('.toast').forEach(x=>x.remove());const d=document.createElement('div');d.className='toast';d.textContent=m;document.body.append(d);setTimeout(()=>d.remove(),3500)}
@@ -190,18 +190,19 @@ function calc(p){const res={};S.units.forEach(u=>res[u.id]={lines:[],ten:0,own:0
  const g=p.gas?.amount||0;if(g){exp+=g;const pct=S.settings.pagioPct,pag=Math.round(g*pct/100);add('Θέρμανση – πάγιο '+String(pct).replace('.',',')+'%','pagio','enoikos',pag,'gas');
   const cw=S.units.reduce((a,u)=>a+weight(u,'cons',p),0);add('Θέρμανση – κατανάλωση'+(cw?'':' (χωρίς μετρήσεις)'),cw?'cons':'therm','enoikos',g-pag,'gas')}
  let all=0;for(const k in res){const r=res[k];r.lines.forEach(l=>{if(l.payer==='idioktitis')r.own+=l.amount;else r.ten+=l.amount});r.tot=r.ten+r.own;all+=r.tot}return{res,exp,all,byExp}}
-function ledger(unitId){ // FIFO: οι πληρωμές εξοφλούν πρώτα τα παλαιότερα
- const pays=S.payments.filter(x=>x.unit===unitId);let pool=pays.reduce((a,x)=>a+x.amount,0);const paid=pool;
- const rows=issued().map(p=>{const amt=p.result.res[unitId].tot,ap=Math.min(amt,Math.max(0,pool));pool-=ap;return{pid:p.id,amt,paid:ap,rest:amt-ap,status:amt===0||ap>=amt?'paid':ap>0?'part':'unpaid'}});
+function ledger(unitId){ // FIFO: οι πληρωμές εξοφλούν πρώτα τα παλαιότερα· οι μήνες ιστορικού (Polygon) δεν επηρεάζουν το υπόλοιπο
+ const op=unitOf(unitId)?.opening||0,pays=S.payments.filter(x=>x.unit===unitId);let pool=pays.reduce((a,x)=>a+x.amount,0)+(op<0?-op:0);const paid=pool;
+ const ch=(op>0?[{pid:'open',amt:op}]:[]).concat(issued().filter(p=>!p.hist).map(p=>({pid:p.id,amt:p.result.res[unitId].tot})));
+ const rows=ch.map(({pid,amt})=>{const ap=Math.min(amt,Math.max(0,pool));pool-=ap;return{pid,amt,paid:ap,rest:amt-ap,status:amt===0||ap>=amt?'paid':ap>0?'part':'unpaid'}});
  const charged=rows.reduce((a,r)=>a+r.amt,0);return{rows,charged,paid,balance:charged-paid}}
 function cash(){let bank=S.settings.openingCash||0,cashm=0;
  for(const x of S.payments)(x.method==='Μετρητά'?(cashm+=x.amount):(bank+=x.amount));for(const x of S.bpay)(x.method==='Μετρητά'?(cashm-=x.amount):(bank-=x.amount));return{bank,cashm}}
-function expList(){const L=[];for(const p of issued()){for(const e of p.expenses)L.push({ref:e.id,pid:p.id,desc:e.desc,amount:e.amount,vendor:e.vendor});
+function expList(){const L=[];for(const p of issued().filter(p=>!p.hist)){for(const e of p.expenses)L.push({ref:e.id,pid:p.id,desc:e.desc,amount:e.amount,vendor:e.vendor});
  if(p.gas?.amount)L.push({ref:p.id+':gas',pid:p.id,desc:p.gas.desc||'Θέρμανση',amount:p.gas.amount,vendor:p.gas.vendor})}
  return L.map(e=>{const pd=S.bpay.filter(b=>b.exp===e.ref).reduce((a,b)=>a+b.amount,0);return{...e,paid:pd,rest:e.amount-pd}})}
 const ref=(u,pid)=>u.label+'-'+pid.replace('-','');
 const recips=u=>[u.ownerEmail,u.tenantEmail].map(x=>(x||'').trim()).filter(Boolean);
-const STATUS={paid:['ok','Πληρώθηκε'],part:['warn','Μερικώς'],unpaid:['bad','Απλήρωτο']};
+const STATUS={paid:['ok','Πληρώθηκε'],part:['warn','Μερικώς'],unpaid:['bad','Απλήρωτο'],hist:['mut','Ιστορικό Polygon']};
 
 /* ---------------- ειδοποιητήριο ---------------- */
 function noticeHTML(p,unitId){const u=p.result.units?.find(x=>x.id===unitId)||unitOf(unitId),r=p.result.res[unitId],prev=p.result.prev[unitId]||0,pay=r.tot+prev,st=S.settings;
@@ -223,7 +224,7 @@ function doPrint(html){$('#print').innerHTML=html;setTimeout(()=>{try{window.pri
 /* ---------------- δεδομένα για τους ενοίκους (ό,τι βλέπει το κάθε διαμέρισμα) ---------------- */
 function derive(){const cards={},iss=issued();
  for(const u of S.units){const L=ledger(u.id);cards[u.id]={unit:{id:u.id,label:u.label,owner:u.owner,tenant:u.tenant},balance:L.balance,
-  notices:iss.map(p=>{const r=L.rows.find(x=>x.pid===p.id);return{pid:p.id,issuedAt:p.issuedAt,tot:p.result.res[u.id].tot,status:r.status,rest:r.rest,lines:p.result.res[u.id].lines.map(l=>({desc:l.desc,amount:l.amount})),html:noticeHTML(p,u.id)}}).reverse(),
+  notices:iss.map(p=>{const r=L.rows.find(x=>x.pid===p.id);return{pid:p.id,issuedAt:p.issuedAt,tot:p.result.res[u.id].tot,status:r?r.status:'hist',rest:r?r.rest:0,lines:p.result.res[u.id].lines.map(l=>({desc:l.desc,amount:l.amount})),html:noticeHTML(p,u.id)}}).reverse(),
   payments:S.payments.filter(x=>x.unit===u.id).map(({date,amount,method})=>({date,amount,method})).sort((a,b)=>b.date.localeCompare(a.date)),
   ref:iss.length?ref(u,iss.at(-1).id):''}}
  const st=S.settings;const pub={name:st.name,address:st.address,iban:st.iban,bank:st.bank,manager:st.manager,ann:[...S.ann].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,30),
@@ -276,7 +277,7 @@ function vBuilding(){const st=S.settings;const rec=st.recurring.map((r,i)=>`<tr>
  <div class="card"><h2>Πάγια μηνιαία έξοδα</h2><p class="mut">Μπαίνουν αυτόματα σε κάθε νέο μήνα.</p><div class="scroll"><table><tr><th>Περιγραφή</th><th>Κατηγορία</th><th>Συνεργάτης</th><th class="n">Ποσό</th><th></th></tr>${rec}</table></div><br>
  <form id="rf" class="row"><label>Κατηγορία<select id="rc">${catOpts()}</select></label><label>Περιγραφή<input id="rd"></label><label>Συνεργάτης<select id="rv">${venOpts()}</select></label><label style="flex:0 1 120px">Ποσό €<input id="ra" inputmode="decimal" required></label><button class="fx">Προσθήκη</button></form></div>
  <div class="card"><h2>Αποστολή email από το Gmail σου</h2><p class="mut">Φτιάξε ένα Google Apps Script με τον κώδικα, κάν' το ανάπτυξη ως εφαρμογή ιστού και βάλε πάνω το URL και το ίδιο μυστικό κλειδί.</p><pre>${esc(APPS_SCRIPT)}</pre><button class="sm" id="copyas">Αντιγραφή</button></div>
- <div class="card"><h2>Αντίγραφο ασφαλείας</h2><div class="row"><button class="fx" id="exp">Εξαγωγή δεδομένων (.json)</button><label class="fx">Επαναφορά<input type="file" id="imp" accept=".json"></label>${B.demo?'<button class="d fx" id="reset">Μηδενισμός δοκιμαστικών</button>':''}</div><textarea id="expout" rows="3" style="display:none;margin-top:8px"></textarea></div>`}
+ <div class="card"><h2>Αντίγραφο ασφαλείας</h2><div class="row"><button class="fx" id="exp">Εξαγωγή δεδομένων (.json)</button><label class="fx">Επαναφορά ή εισαγωγή ιστορικού<input type="file" id="imp" accept=".json"></label>${B.demo?'<button class="d fx" id="reset">Μηδενισμός δοκιμαστικών</button>':''}</div><textarea id="expout" rows="3" style="display:none;margin-top:8px"></textarea></div>`}
 const catOpts=k=>Object.entries(CATS).map(([v,[t]])=>`<option value="${v}" ${v===k?'selected':''}>${esc(t)}</option>`).join('');
 const venOpts=k=>'<option value="">—</option>'+S.vendors.map(v=>`<option value="${v.id}" ${v.id===k?'selected':''}>${esc(v.name)}</option>`).join('');
 
@@ -288,7 +289,7 @@ function vVendors(){const v=editId&&S.vendors.find(x=>x.id===editId)||(editId===
 function vUnits(){const users=unitData?.users||[];const has=id=>users.find(x=>x.unit===id);
  const u=editId&&unitOf(editId);const F=u?`<div class="card"><h2>Διαμέρισμα ${esc(u.label)}</h2><form id="uf"><div class="row"><label>Ιδιοκτήτης<input id="uo" value="${esc(u.owner)}"></label><label>Email ιδιοκτήτη<input id="uoe" type="email" value="${esc(u.ownerEmail)}"></label><label style="flex:0 1 90px">Όροφος<input id="ufl" value="${esc(u.floor)}"></label></div><br>
  <div class="row"><label>Ένοικος<input id="ut" value="${esc(u.tenant)}"></label><label>Email ενοίκου<input id="ute" type="email" value="${esc(u.tenantEmail)}"></label></div><br>
- <div class="row"><label>Χιλ. κοινοχρήστων<input id="uxe" inputmode="decimal" value="${u.xe}"></label><label>Χιλ. ανελκυστήρα<input id="uxa" inputmode="decimal" value="${u.xa}"></label></div><br>
+ <div class="row"><label>Χιλ. κοινοχρήστων<input id="uxe" inputmode="decimal" value="${u.xe}"></label><label>Χιλ. ανελκυστήρα<input id="uxa" inputmode="decimal" value="${u.xa}"></label><label>Αρχικό υπόλοιπο € (+ οφειλή, − πίστωση)<input id="uop" inputmode="decimal" value="${((u.opening||0)/100).toFixed(2)}"></label></div><br>
  ${u.meters.map((m,i)=>`<div class="row"><label>Ωρομετρητής<input value="${esc(m.label)}" disabled></label><label>Χιλ. παγίου<input data-mxp="${i}" inputmode="decimal" value="${m.xp}"></label><label>Χιλ. θέρμανσης<input data-mxt="${i}" inputmode="decimal" value="${m.xt}"></label></div>`).join('<br>')}
  <br><div class="row"><button class="p fx">Αποθήκευση</button><button type="button" class="fx" id="ucancel">Άκυρο</button></div></form></div>`:'';
  const sum=k=>S.units.reduce((a,x)=>a+num(x[k]),0),st=Math.round(S.units.reduce((a,x)=>a+x.meters.reduce((b,m)=>b+m.xt,0),0)*100)/100;
@@ -322,7 +323,7 @@ function vByUnit(){const p=srcPeriod();if(!p)return'<div class="card mut">Δεν
  ${S.units.map(u=>{const r=c.res[u.id];return`<tr><td>${esc(u.label)}</td><td>${esc(u.owner)}</td><td class="n">${eur(r.ten)}</td><td class="n">${eur(r.own)}</td><td class="n"><b>${eur(r.tot)}</b></td></tr>`}).join('')}<tr><td colspan=4><b>Σύνολο</b></td><td class="n"><b>${eur(c.all)}</b></td></tr></table></div></div>`}
 function vIssued(){const iss=issued().reverse();if(!iss.length)return'<div class="card mut">Δεν έχουν εκδοθεί κοινόχρηστα ακόμα.</div>';
  if(!sel||!per(sel)||per(sel).status!=='issued')sel=iss[0].id;const p=per(sel),noMail=S.units.filter(u=>!recips(u).length),last=iss[0];
- return`<div class="card"><div class="row"><label style="flex:0 1 240px">Μήνας<select id="psel">${iss.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(plabel(x.id))}</option>`).join('')}</select></label>
+ return`<div class="card"><div class="row"><label style="flex:0 1 240px">Μήνας<select id="psel">${iss.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(plabel(x.id))}${x.hist?' (Polygon)':''}</option>`).join('')}</select></label>
  <button class="p fx" id="mailall">Αποστολή email σε όλους</button><button class="fx" id="printno">Εκτύπωση όσων δεν έχουν email (${noMail.length})</button><button class="fx" id="printall">Εκτύπωση όλων</button><button class="fx" id="printsum">Πίνακας ποσών</button>
  ${p===last&&!draft()?'<button class="fx d" id="unissue">Ακύρωση έκδοσης</button>':''}</div></div>
  <div class="card"><div class="scroll"><table><tr><th>Διαμ.</th><th>Όνομα</th><th class="n">Πληρωτέο</th><th>Email</th><th></th></tr>
@@ -406,7 +407,10 @@ function bind(){
   $$('[data-delrec]').forEach(b=>b.onclick=()=>{st.recurring.splice(+b.dataset.delrec,1);save()});
   $('#copyas').onclick=()=>navigator.clipboard?.writeText(APPS_SCRIPT).then(()=>toast('Αντιγράφηκε'),()=>toast('Επίλεξε και αντίγραψε τον κώδικα'));
   $('#exp').onclick=()=>{const t=JSON.stringify(S);try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/json'}));a.download='koinoxrista-'+today()+'.json';a.click()}catch(e){}const o=$('#expout');o.style.display='block';o.value=t};
-  $('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!d.units||!d.periods)throw Error('μη έγκυρο αρχείο');if(!confirm('Αντικατάσταση όλων των δεδομένων;'))return;S=d;save();toast('Έγινε επαναφορά')}catch(err){toast('Σφάλμα: '+err.message)}};
+  $('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());
+   if(d.type==='history'){let n=0;for(const p of d.periods){if(per(p.id)){continue}S.periods.push(p);n++}
+    if(d.owners&&confirm('Ενημέρωση ονομάτων ιδιοκτητών με τα τελευταία της Polygon;'))for(const k in d.owners){const u=unitOf(k);if(u)u.owner=d.owners[k]}
+    S.periods.sort((a,b)=>a.id.localeCompare(b.id));save();toast(`Προστέθηκαν ${n} μήνες ιστορικού`);return}if(!d.units||!d.periods)throw Error('μη έγκυρο αρχείο');if(!confirm('Αντικατάσταση όλων των δεδομένων;'))return;S=d;save();toast('Έγινε επαναφορά')}catch(err){toast('Σφάλμα: '+err.message)}};
   if($('#reset'))$('#reset').onclick=async()=>{if(!confirm('Σβήνονται όλα. Συνέχεια;'))return;await B.resetAll();await B.init();me=null;render()}}
  /* συνεργάτες */
  $$('[data-ev]').forEach(b=>b.onclick=()=>{editId=b.dataset.ev;render();scrollTo(0,0)});
@@ -415,7 +419,7 @@ function bind(){
  /* διαμερίσματα */
  $$('[data-eu]').forEach(b=>b.onclick=()=>{editId=b.dataset.eu;render();scrollTo(0,0)});
  if($('#uf')){const u=unitOf(editId);$('#ucancel').onclick=()=>{editId=null;render()};
-  $('#uf').onsubmit=e=>{e.preventDefault();Object.assign(u,{owner:$('#uo').value.trim(),ownerEmail:$('#uoe').value.trim(),tenant:$('#ut').value.trim(),tenantEmail:$('#ute').value.trim(),floor:$('#ufl').value.trim(),xe:num($('#uxe').value),xa:num($('#uxa').value)});
+  $('#uf').onsubmit=e=>{e.preventDefault();Object.assign(u,{owner:$('#uo').value.trim(),ownerEmail:$('#uoe').value.trim(),tenant:$('#ut').value.trim(),tenantEmail:$('#ute').value.trim(),floor:$('#ufl').value.trim(),xe:num($('#uxe').value),xa:num($('#uxa').value),opening:toC($('#uop').value)});
    $$('[data-mxp]').forEach(i=>u.meters[+i.dataset.mxp].xp=num(i.value));$$('[data-mxt]').forEach(i=>u.meters[+i.dataset.mxt].xt=num(i.value));editId=null;save();toast('Αποθηκεύτηκε')}}
  const pwgen=()=>Math.random().toString(36).slice(2,6)+Math.floor(1000+Math.random()*9000);
  $$('[data-mk]').forEach(b=>b.onclick=async()=>{const u=unitOf(b.dataset.mk),name=u.id.toLowerCase(),pw=pwgen();b.disabled=true;
