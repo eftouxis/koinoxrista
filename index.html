@@ -456,7 +456,7 @@ function bind(){
  /* αναφορές */
  if($('#ry')){$('#ry').onchange=e=>{sel=e.target.value;render()};$('#rprint').onclick=()=>doPrint('<div class="notice">'+$('#rep').innerHTML+'</div>')}
 }
-(async()=>{try{me=await B.init();if(me)await afterLogin();else render()}catch(e){$('#app').innerHTML=`<div class="login"><div class="card"><h1>Σφάλμα</h1><p>${esc(e.message)}</p></div></div>`}})();
+(async()=>{try{me=await B.init();if(me)await afterLogin();else render()}catch(e){$('#app').innerHTML=`<div class="login"><div class="card"><h1>Σφάλμα</h1><p>${esc(e.message)}</p><button class="p" id="retry">Δοκίμασε ξανά</button> <button id="relog">Αποσύνδεση</button></div></div>`;$('#retry').onclick=()=>location.reload();$('#relog').onclick=async()=>{try{await B.logout()}catch(x){}location.reload()}}})();
 }
 </script>
 </body>
