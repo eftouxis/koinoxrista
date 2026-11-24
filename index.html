@@ -93,7 +93,7 @@ const CATS={kathar:['Καθαρισμός','koina','enoikos'],kipos:['Κηπου
  mikro:['Μικροέξοδα (λάμπες, αναλώσιμα)','koina','enoikos'],asanser:['Ασανσέρ – συντήρηση','asanser','enoikos'],asanser_ep:['Ασανσέρ – βλάβη / ανταλλακτικό','asanser','enoikos'],
  asanser_ergo:['Ασανσέρ – αντικατάσταση / εκσυγχρονισμός','asanser','idioktitis'],therm_syn:['Θέρμανση – συντήρηση / καμινάδα','therm','enoikos'],
  therm_ergo:['Θέρμανση – εγκατάσταση / εξοπλισμός','therm','idioktitis'],ergo:['Επισκευή / βελτίωση κτιρίου','koina','idioktitis'],
- asfaleia:['Ασφάλεια κτιρίου / πυροσβεστήρες','koina','idioktitis'],apothem:['Αποθεματικό','koina','idioktitis'],isa:['Ισόποσο (απόφαση συνέλευσης)','isa','enoikos'],allo:['Άλλο','koina','enoikos']};
+ asfaleia:['Ασφάλεια κτιρίου / πυροσβεστήρες','koina','idioktitis'],apothem:['Αποθεματικό','koina','idioktitis'],diax:['Αμοιβή διαχείρισης','koina','idioktitis'],trapeza:['Έξοδα τράπεζας','isa','enoikos'],isa:['Ισόποσο (απόφαση συνέλευσης)','isa','enoikos'],allo:['Άλλο','koina','enoikos']};
 const MONTHS=['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const eur=c=>(c/100).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
