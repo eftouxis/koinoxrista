@@ -19,6 +19,7 @@ create table if not exists public.public_info (          -- ανακοινώσε
 
 -- πρόσβαση μέσω API μόνο για συνδεδεμένους χρήστες (οι κανόνες RLS παρακάτω ορίζουν τι βλέπει ο καθένας)
 revoke all on public.profiles, public.app_state, public.unit_cards, public.public_info from anon;
+grant usage on schema public to authenticated;
 grant select, insert, update, delete on public.profiles, public.app_state, public.unit_cards, public.public_info to authenticated;
 
 alter table public.profiles    enable row level security;
@@ -38,6 +39,8 @@ create or replace function public.has_profile() returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from profiles where user_id = auth.uid())
 $$;
+
+grant execute on function public.is_admin(), public.my_unit(), public.has_profile() to authenticated;
 
 -- profiles: ο καθένας βλέπει τον εαυτό του, ο διαχειριστής όλους
 drop policy if exists p_sel on public.profiles;

@@ -150,7 +150,7 @@ const SupaBackend={demo:false,sb:null,
  async init(){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=ok;s.onerror=()=>no(Error('Δεν φορτώθηκε το Supabase'));document.head.append(s)});
   this.sb=supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabaseKey);const{data}=await this.sb.auth.getSession();return data.session?this.profile():null},
  async profile(){const{data:{user}}=await this.sb.auth.getUser();if(!user)return null;const{data,error}=await this.sb.from('profiles').select('*').eq('user_id',user.id).maybeSingle();
-  if(error||!data)throw Error('Ο λογαριασμός δεν έχει ρόλο. Επικοινώνησε με τον διαχειριστή.');return{u:data.username,role:data.role,unit:data.unit_id}},
+  if(error)throw Error('Σφάλμα βάσης: '+error.message);if(!data)throw Error('Ο λογαριασμός δεν έχει ρόλο. Επικοινώνησε με τον διαχειριστή.');return{u:data.username,role:data.role,unit:data.unit_id}},
  async login(u,pw){const{error}=await this.sb.auth.signInWithPassword({email:this.email(u),password:pw});if(error)throw Error('Λάθος όνομα χρήστη ή κωδικός');return this.profile()},
  async logout(){await this.sb.auth.signOut()},
  async loadAdmin(){const{data,error}=await this.sb.from('app_state').select('data').eq('id',1).maybeSingle();if(error)throw error;return data?.data||null},
