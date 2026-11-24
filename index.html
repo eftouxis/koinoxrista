@@ -120,7 +120,7 @@ function seedState(){
  const readings={};for(const k in R)readings[k]={s:R[k][0],e:R[k][1]};
  const ven=[{id:'v1',name:'Συνεργείο καθαρισμού',spec:'Καθαρισμός',phone:'',email:'',afm:'',iban:''},{id:'v2',name:'Κηπουρός',spec:'Κήπος',phone:'',email:'',afm:'',iban:''},{id:'v3',name:'Εταιρεία ανελκυστήρα',spec:'Ασανσέρ',phone:'',email:'',afm:'',iban:''},{id:'v4',name:'Aerion',spec:'Φυσικό αέριο',phone:'',email:'',afm:'',iban:''}];
  const ex=(cat,desc,amount,vendor)=>({id:uid(),cat,desc,amount,key:CATS[cat][1],payer:CATS[cat][2],vendor});
- return{v:2,settings:{name:'17ης Νοεμβρίου 1973 31',address:'17ης Νοεμβρίου 1973 31, Άλιμος',afm:'',manager:'Λ. Ελευθερίου',iban:'',bank:'',mailUrl:'',mailKey:'',pagioPct:18.6,openingCash:0,
+ return{v:2,settings:{name:'17ης Νοεμβρίου 1973 31',address:'17ης Νοεμβρίου 1973 31, Άλιμος',afm:'',manager:'Λ. Ελευθερίου',iban:'',bank:'',mailUrl:'',mailKey:'',pagioPct:18,pagioKey:'xt',openingCash:0,
   recurring:[{cat:'kathar',desc:'Καθαρισμός',amount:7000,vendor:'v1'},{cat:'kipos',desc:'Κηπουρός',amount:10000,vendor:'v2'},{cat:'asanser',desc:'Ασανσέρ – συντήρηση',amount:4400,vendor:'v3'}]},
   units:U.map(([id,o,fl,xe,xa,ms])=>({id,label:L(id),owner:o,ownerEmail:'',tenant:'',tenantEmail:'',floor:fl,xe,xa,meters:ms.map(([m,xp,xt])=>({id:m,label:L(m),xp,xt}))})),
   vendors:ven,payments:[],bpay:[],ann:[],
@@ -181,7 +181,7 @@ function save(){render();clearTimeout(saveTimer);saving='…';saveTimer=setTimeo
 function allocate(c,w){const W=w.reduce((a,b)=>a+b,0);if(!W||!c)return w.map(()=>0);const raw=w.map(x=>c*x/W),fl=raw.map(Math.floor);let r=c-fl.reduce((a,b)=>a+b,0);
  raw.map((x,i)=>[x-fl[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(r>0){fl[i]++;r--}});return fl}
 function weight(u,key,p){if(key==='koina')return u.xe;if(key==='asanser')return u.xa;if(key==='isa')return 1;
- if(key==='therm')return u.meters.reduce((a,m)=>a+m.xt,0);if(key==='pagio')return u.meters.reduce((a,m)=>a+m.xp,0);
+ if(key==='therm')return u.meters.reduce((a,m)=>a+m.xt,0);if(key==='pagio')return u.meters.reduce((a,m)=>a+(S.settings.pagioKey==='xp'?m.xp:m.xt),0);
  if(key==='cons')return u.meters.reduce((a,m)=>{const r=p.readings?.[m.id];return a+(r?Math.max(0,num(r.e)-num(r.s)):0)*m.xt},0);return 0}
 function calc(p){const res={};S.units.forEach(u=>res[u.id]={lines:[],ten:0,own:0,tot:0});const byExp=[];
  const add=(desc,key,payer,c,ref)=>{const w=S.units.map(u=>weight(u,key,p)),a=allocate(c,w),W=w.reduce((x,y)=>x+y,0);byExp.push({desc,key,payer,amount:c,ref});
@@ -205,7 +205,7 @@ const STATUS={paid:['ok','Πληρώθηκε'],part:['warn','Μερικώς'],un
 
 /* ---------------- ειδοποιητήριο ---------------- */
 function noticeHTML(p,unitId){const u=p.result.units?.find(x=>x.id===unitId)||unitOf(unitId),r=p.result.res[unitId],prev=p.result.prev[unitId]||0,pay=r.tot+prev,st=S.settings;
- const kt=l=>l.key==='cons'?'κατανάλωση':l.key==='pagio'?'χιλ. παγίου':KEYS[l.key];
+ const kt=l=>l.key==='cons'?'ώρες × χιλ. θέρμ.':l.key==='pagio'?(S.settings.pagioKey==='xp'?'χιλ. παγίου':'χιλ. θέρμανσης'):KEYS[l.key];
  const rows=r.lines.map(l=>`<tr><td>${esc(l.desc)}</td><td>${esc(kt(l))}</td><td style="text-align:right">${eur(l.total)}</td><td style="text-align:right">${eur(l.amount)}</td><td>${l.payer==='idioktitis'?'Ιδιοκτ.':'Ένοικ.'}</td></tr>`).join('');
  const meters=u.meters.map(m=>{const x=p.readings?.[m.id];return x&&x.e!==''?`${esc(m.label)}: ${esc(x.s)} → ${esc(x.e)}`:''}).filter(Boolean).join(' · ');
  return`<div class="notice"><div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><div><h3>Ειδοποιητήριο κοινοχρήστων</h3><div>${esc(st.address||st.name)}</div></div><div style="text-align:right"><b>${esc(plabel(p.id))}</b><br>Έκδοση: ${fdate(p.issuedAt)}</div></div>
@@ -271,7 +271,7 @@ function vHome(){const c=cash(),y=new Date().getFullYear()+'';const L=S.units.ma
 function vBuilding(){const st=S.settings;const rec=st.recurring.map((r,i)=>`<tr><td>${esc(r.desc)}</td><td>${esc(CATS[r.cat][0])}</td><td>${esc(venName(r.vendor))}</td><td class="n">${eur(r.amount)}</td><td class="fx"><button class="sm d" data-delrec="${i}">✕</button></td></tr>`).join('');
  return`<div class="card"><h2>Στοιχεία</h2><form id="sf"><div class="row"><label>Όνομα<input id="s_name" value="${esc(st.name)}"></label><label>Διεύθυνση<input id="s_address" value="${esc(st.address)}"></label><label>ΑΦΜ πολυκατοικίας<input id="s_afm" value="${esc(st.afm)}"></label></div><br>
  <div class="row"><label>Διαχειριστής<input id="s_manager" value="${esc(st.manager)}"></label><label>IBAN<input id="s_iban" value="${esc(st.iban)}" placeholder="GR.."></label><label>Τράπεζα<input id="s_bank" value="${esc(st.bank)}"></label></div><br>
- <div class="row"><label>Πάγιο θέρμανσης %<input id="s_pagioPct" inputmode="decimal" value="${st.pagioPct}"></label><label>Αρχικό ταμείο €<input id="s_openingCash" inputmode="decimal" value="${(st.openingCash/100).toFixed(2)}"></label></div><br>
+ <div class="row"><label>Πάγιο θέρμανσης %<input id="s_pagioPct" inputmode="decimal" value="${st.pagioPct}"></label><label>Κατανομή παγίου με<select id="s_pagioKey"><option value="xt" ${st.pagioKey!=='xp'?'selected':''}>Χιλ. θέρμανσης (όπως η Polygon)</option><option value="xp" ${st.pagioKey==='xp'?'selected':''}>Χιλ. παγίου (όπως το παλιό Excel)</option></select></label><label>Αρχικό ταμείο €<input id="s_openingCash" inputmode="decimal" value="${(st.openingCash/100).toFixed(2)}"></label></div><br>
  <div class="row"><label>URL αποστολής email (Apps Script)<input id="s_mailUrl" value="${esc(st.mailUrl)}" placeholder="https://script.google.com/macros/s/…/exec"></label><label>Μυστικό κλειδί<input id="s_mailKey" value="${esc(st.mailKey)}"></label></div><br><button class="p">Αποθήκευση</button></form></div>
  <div class="card"><h2>Πάγια μηνιαία έξοδα</h2><p class="mut">Μπαίνουν αυτόματα σε κάθε νέο μήνα.</p><div class="scroll"><table><tr><th>Περιγραφή</th><th>Κατηγορία</th><th>Συνεργάτης</th><th class="n">Ποσό</th><th></th></tr>${rec}</table></div><br>
  <form id="rf" class="row"><label>Κατηγορία<select id="rc">${catOpts()}</select></label><label>Περιγραφή<input id="rd"></label><label>Συνεργάτης<select id="rv">${venOpts()}</select></label><label style="flex:0 1 120px">Ποσό €<input id="ra" inputmode="decimal" required></label><button class="fx">Προσθήκη</button></form></div>
@@ -309,7 +309,7 @@ function vDraft(){const p=draft();
  <form id="xf" class="row"><label>Κατηγορία<select id="xc">${catOpts('dei')}</select></label><label>Περιγραφή<input id="xd" placeholder="π.χ. ΔΕΗ 10/9–10/11"></label><label>Συνεργάτης<select id="xv">${venOpts()}</select></label><label style="flex:0 1 120px">Ποσό €<input id="xa" inputmode="decimal" required></label><button class="p fx">+ Προσθήκη δαπάνης</button>
  <details style="flex-basis:100%"><summary class="mut">Άλλο κλειδί ή άλλος πληρωτής (μόνο αν το ορίζει ο κανονισμός)</summary><div class="row" style="margin-top:8px"><label>Κατανομή<select id="xk"><option value="">αυτόματα</option>${Object.entries(KEYS).map(([k,t])=>`<option value="${k}">${t}</option>`).join('')}</select></label><label>Βαρύνει<select id="xp"><option value="">αυτόματα</option><option value="enoikos">Ένοικο</option><option value="idioktitis">Ιδιοκτήτη</option></select></label></div></details></form><p class="mut" id="xhint"></p></div>
  <div class="card"><h2>Θέρμανση</h2><div class="row"><label>Λογαριασμός<input id="gd" value="${esc(p.gas?.desc)}"></label><label>Συνεργάτης<select id="gv">${venOpts(p.gas?.vendor)}</select></label><label style="flex:0 1 140px">Ποσό €<input id="ga" inputmode="decimal" value="${p.gas?.amount?(p.gas.amount/100).toFixed(2):''}"></label></div>
- <p class="mut">Πάγιο ${String(S.settings.pagioPct).replace('.',',')}% με χιλ. παγίου, το υπόλοιπο με ώρες × χιλ. θέρμανσης. Ο λογαριασμός πρέπει να αφορά την ίδια περίοδο με τις ενδείξεις.</p>
+ <p class="mut">Πάγιο ${String(S.settings.pagioPct).replace('.',',')}% με ${S.settings.pagioKey==='xp'?'χιλ. παγίου':'χιλ. θέρμανσης'}, το υπόλοιπο με ώρες × χιλ. θέρμανσης. Ο λογαριασμός πρέπει να αφορά την ίδια περίοδο με τις ενδείξεις.</p>
  <details ${p.gas?.amount?'open':''}><summary>Ενδείξεις ωρομετρητών</summary><div class="scroll"><table><tr><th>Μετρητής</th><th>Αρχή</th><th>Τέλος</th><th class="n">Ώρες</th></tr>
  ${S.units.flatMap(u=>u.meters.map(m=>{const r=p.readings[m.id]||{s:'',e:''},d=num(r.e)-num(r.s);return`<tr><td>${esc(m.label)}</td><td><input inputmode="decimal" data-rd="${m.id}|s" value="${esc(r.s)}"></td><td><input inputmode="decimal" data-rd="${m.id}|e" value="${esc(r.e)}"></td><td class="n ${d<0?'bad':''}">${(Math.round(d*100)/100).toString().replace('.',',')}</td></tr>`})).join('')}</table></div></details></div>
  <div class="card"><p class="${ok?'ok':'bad'}" style="margin:0">${ok?'✓ Τα ποσά των διαμερισμάτων αθροίζουν ακριβώς στις δαπάνες':'✕ Διαφορά κατανομής: '+eur(c.exp-c.all)}</p><br><button class="d sm" id="delp">Διαγραφή μήνα</button></div>`}
@@ -401,7 +401,7 @@ function bind(){
  $$('[data-payu]').forEach(b=>b.onclick=()=>{page='tx';sel=b.dataset.payu;editId=+b.dataset.amt;render()});
  /* στοιχεία */
  if($('#sf')){const st=S.settings;$('#sf').onsubmit=e=>{e.preventDefault();['name','address','afm','manager','iban','bank','mailUrl','mailKey'].forEach(k=>st[k]=$('#s_'+k).value.trim());
-   const pc=num($('#s_pagioPct').value);if(pc>=0&&pc<=100)st.pagioPct=pc;st.openingCash=toC($('#s_openingCash').value);save();toast('Αποθηκεύτηκε')};
+   const pc=num($('#s_pagioPct').value);if(pc>=0&&pc<=100)st.pagioPct=pc;st.openingCash=toC($('#s_openingCash').value);st.pagioKey=$('#s_pagioKey').value;save();toast('Αποθηκεύτηκε')};
   $('#rf').onsubmit=e=>{e.preventDefault();const c=$('#rc').value;st.recurring.push({cat:c,desc:$('#rd').value.trim()||CATS[c][0],amount:toC($('#ra').value),vendor:$('#rv').value});save()};
   $$('[data-delrec]').forEach(b=>b.onclick=()=>{st.recurring.splice(+b.dataset.delrec,1);save()});
   $('#copyas').onclick=()=>navigator.clipboard?.writeText(APPS_SCRIPT).then(()=>toast('Αντιγράφηκε'),()=>toast('Επίλεξε και αντίγραψε τον κώδικα'));
