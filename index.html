@@ -82,7 +82,7 @@ pre{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10
 <div id="print"></div>
 <script>
 /* ====== ΡΥΘΜΙΣΗ: μετά τη δημιουργία του Supabase βάλε εδώ URL και anon key ====== */
-const APP_VER='26/11 δ';
+const APP_VER='26/11 ε';
 const CONFIG={supabaseUrl:'https://csjcqxulwspmmwfgenig.supabase.co',supabaseKey:'sb_publishable_rbfYAfgoF1HHNUFwH9VcNw_oDbrAOkN',loginDomain:'polykatoikia.app'};
 </script>
 <script>
@@ -552,6 +552,13 @@ function bind(){
   if($('#copyas'))$('#copyas').onclick=()=>navigator.clipboard?.writeText(APPS_SCRIPT).then(()=>toast('Αντιγράφηκε'),()=>toast('Επίλεξε και αντίγραψε τον κώδικα'));
   if($('#exp'))$('#exp').onclick=()=>{const t=JSON.stringify(S);try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/json'}));a.download='koinoxrista-'+today()+'.json';a.click()}catch(e){}const o=$('#expout');o.style.display='block';o.value=t};
   if($('#imp'))$('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());
+   if(d.type==='opening'){const st=S.settings,c=v=>Math.round(Number(v)*100);let n=0;
+    if(d.cash!=null)st.openingCash=c(d.cash);if(d.reserve!=null)st.openingReserve=c(d.reserve);
+    for(const k in d.units||{}){const u=unitOf(k);if(u){u.opening=c(d.units[k]);n++}}
+    if(d.date)st.openingDate=d.date;const box=m=>{const o=$('#impres');if(o){o.style.display='block';o.innerHTML=m}};
+    try{clearTimeout(saveTimer);const{cards,pub}=derive();await B.saveAdmin(S,cards,pub);saving='✓ αποθηκεύτηκε';render();
+     box(`<b class="ok">✓ Αρχικά υπόλοιπα: ${n} διαμερίσματα${d.cash!=null?', ταμείο '+eur(c(d.cash)):''}${d.reserve!=null?', αποθεματικό '+eur(c(d.reserve)):''}.</b> Θετικό = οφειλή, αρνητικό = πίστωση.`)}
+    catch(err){box(`<b class="bad">✕ Η αποθήκευση απέτυχε: ${esc(err.message||err)}</b>`);if(String(err.message)==='CONFLICT')showConflict()}return}
    if(d.type==='history'){let n=0;for(const p of d.periods){if(per(p.id)){continue}S.periods.push(p);n++}
     if(d.owners&&confirm('Ενημέρωση ονομάτων ιδιοκτητών με τα τελευταία της Polygon;'))for(const k in d.owners){const u=unitOf(k);if(u)u.owner=d.owners[k]}
     S.periods.sort((a,b)=>a.id.localeCompare(b.id));render();const box=m=>{const o=$('#impres');if(o){o.style.display='block';o.innerHTML=m}};
