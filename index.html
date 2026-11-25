@@ -167,7 +167,7 @@ const SupaBackend={demo:false,sb:null,
  async createUser(u,pw,role,unit){const tmp=supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabaseKey,{auth:{persistSession:false,autoRefreshToken:false,storageKey:'kx-tmp'}});
   const{data,error}=await tmp.auth.signUp({email:this.email(u),password:pw});if(error)throw error;if(!data.user)throw Error('Δεν δημιουργήθηκε χρήστης');
   const r=await this.sb.from('profiles').insert({user_id:data.user.id,username:u,role,unit_id:unit});if(r.error)throw r.error},
- async resetPassword(){throw Error('Νέος κωδικός σε υπάρχοντα λογαριασμό γίνεται από το Supabase (Authentication → Users → Reset password).')},
+ async resetPassword(u,pw){const{error}=await this.sb.rpc('admin_set_password',{p_username:u,p_password:pw});if(error)throw Error(error.message.includes('admin_set_password')?'Τρέξε πρώτα το admin.sql στο Supabase':error.message)},
  async changePassword(me,pw){const{error}=await this.sb.auth.updateUser({password:pw});if(error)throw error},
  async resetAll(){throw Error('Δεν επιτρέπεται στην κανονική λειτουργία')},
  async listRequests(){const{data,error}=await this.sb.from('requests').select('*').order('created_at',{ascending:false});if(error)throw Error(error.message.includes('requests')?'Τρέξε πρώτα το features.sql στο Supabase':error.message);return data},
@@ -301,7 +301,7 @@ const venOpts=k=>'<option value="">—</option>'+S.vendors.map(v=>`<option value
 
 function vVendors(){const v=editId&&S.vendors.find(x=>x.id===editId)||(editId==='new'?{id:'new'}:null);
  const F=v?`<div class="card"><h2>${v.id==='new'?'Νέος συνεργάτης':'Συνεργάτης'}</h2><form id="vf"><div class="row">${[['name','Επωνυμία'],['spec','Ειδικότητα'],['phone','Τηλέφωνο'],['email','Email'],['afm','ΑΦΜ'],['iban','IBAN']].map(([k,t])=>`<label>${t}<input data-vf="${k}" value="${esc(v[k])}"></label>`).join('')}</div><br><div class="row"><button class="p fx">Αποθήκευση</button><button type="button" class="fx" id="vcancel">Άκυρο</button></div></form></div>`:'';
- return F+`<div class="card"><div class="row" style="margin-bottom:10px"><h2 style="margin:0">Συνεργάτες</h2><button class="p fx" data-ev="new">+ Νέος συνεργάτης</button></div><div class="scroll"><table><tr><th>Επωνυμία</th><th>Ειδικότητα</th><th>Τηλέφωνο</th><th class="hide-s">Email</th><th class="n">Πληρωμές</th><th></th></tr>
+ return F+`<div class="card"><div class="row" style="margin-bottom:10px"><div></div><button class="p fx" data-ev="new">+ Νέος συνεργάτης</button></div><div class="scroll"><table><tr><th>Επωνυμία</th><th>Ειδικότητα</th><th>Τηλέφωνο</th><th class="hide-s">Email</th><th class="n">Πληρωμές</th><th></th></tr>
  ${S.vendors.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.spec)}</td><td>${esc(x.phone)}</td><td class="hide-s">${esc(x.email)}</td><td class="n">${eur(S.bpay.filter(b=>b.vendor===x.id).reduce((a,b)=>a+b.amount,0))}</td><td class="fx"><button class="sm" data-ev="${x.id}">Επεξεργασία</button></td></tr>`).join('')}</table></div></div>`}
 
 function vUnits(){const users=unitData?.users||[];const has=id=>users.find(x=>x.unit===id);
@@ -312,9 +312,9 @@ function vUnits(){const users=unitData?.users||[];const has=id=>users.find(x=>x.
  ${u.meters.map((m,i)=>`<div class="row"><label>Ωρομετρητής<input value="${esc(m.label)}" disabled></label><label>Χιλ. παγίου<input data-mxp="${i}" inputmode="decimal" value="${m.xp}"></label><label>Χιλ. θέρμανσης<input data-mxt="${i}" inputmode="decimal" value="${m.xt}"></label></div>`).join('<br>')}
  <br><div class="row"><button class="p fx">Αποθήκευση</button><button type="button" class="fx" id="ucancel">Άκυρο</button></div></form></div>`:'';
  const sum=k=>S.units.reduce((a,x)=>a+num(x[k]),0),st=Math.round(S.units.reduce((a,x)=>a+x.meters.reduce((b,m)=>b+m.xt,0),0)*100)/100;
- return F+`<div class="card"><h2>Διαμερίσματα</h2><div class="scroll"><table><tr><th>Διαμ.</th><th>Λογαριασμός</th><th>Ιδιοκτήτης / Ένοικος</th><th>Όροφος</th><th class="n">Χιλ. κοιν.</th><th class="n">Χιλ. ανελκ.</th><th class="n">Χιλ. θέρμ.</th><th></th></tr>
+ return F+`<div class="card"><div class="scroll"><table><tr><th>Διαμέρισμα</th><th>Λογαριασμός</th><th>Ιδιοκτήτης / Ένοικος</th><th>Όροφος</th><th class="n">Χιλ. κοιν.</th><th class="n">Χιλ. ανελκ.</th><th class="n">Χιλ. θέρμ.</th><th></th></tr>
  ${S.units.map(x=>{const a=has(x.id);return`<tr><td>${esc(x.label)}</td><td>${a?`<span class="st ok">Ενεργός</span><div class="mut">${esc(a.u)}</div>`:'<span class="st bad">Χωρίς λογαριασμό</span>'}</td><td>${esc(x.owner)}${x.rented?' <span class="tag w">ενοικιάζεται</span>':''}${x.tenant?`<div class="mut">Ένοικος: ${esc(x.tenant)}</div>`:''}<div class="mut">${esc(recips(x).join(', '))}</div></td><td>${esc(x.floor)}</td><td class="n">${x.xe}</td><td class="n">${x.xa}</td><td class="n">${x.meters.map(m=>m.xt).join('+')}</td>
- <td class="fx"><button class="sm" data-eu="${x.id}">Επεξεργασία</button> ${a?(B.demo?`<button class="sm" data-pw="${esc(a.u)}">Νέος κωδικός</button>`:''):`<button class="sm p" data-mk="${x.id}">Δημιουργία λογαριασμού</button>`}</td></tr>`}).join('')}
+ <td class="fx"><button class="sm" data-eu="${x.id}">Επεξεργασία</button> ${a?`<button class="sm" data-pw="${esc(a.u)}">Νέος κωδικός</button>`:`<button class="sm p" data-mk="${x.id}">Δημιουργία λογαριασμού</button>`}</td></tr>`}).join('')}
  <tr><td colspan=4><b>Αθροιστικά χιλιοστά</b></td><td class="n ${sum('xe')===1000?'ok':'bad'}">${sum('xe')}</td><td class="n ${sum('xa')===1000?'ok':'bad'}">${sum('xa')}</td><td class="n">${st}</td><td></td></tr></table></div><p id="pwout"></p></div>`}
 
 function vBills(){const tabs=[['draft','Δαπάνες προς έκδοση'],['byexp','Κοινόχρηστα ανά δαπάνη'],['byunit','Κοινόχρηστα ανά διαμέρισμα'],['issued','Εκδοθέντα & εκτυπώσεις']];
