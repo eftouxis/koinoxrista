@@ -135,15 +135,15 @@ const DemoBackend={demo:true,
  async init(){if(!lsGet('users')){const us=[{u:'admin',h:await hash('admin'),role:'admin'}];for(const x of seedState().units)us.push({u:x.id.toLowerCase(),h:await hash('1234'),role:'unit',unit:x.id});lsSet('users',us)}
   try{return JSON.parse(sessionStorage.getItem(LS+'me'))}catch(e){return null}},
  async login(u,pw){const h=await hash(pw);const x=(lsGet('users')||[]).find(y=>y.u===u.toLowerCase()&&y.h===h);if(!x)throw Error('Λάθος όνομα χρήστη ή κωδικός');
-  const me={u:x.u,role:x.role,unit:x.unit};try{sessionStorage.setItem(LS+'me',JSON.stringify(me))}catch(e){}return me},
+  const me={u:x.u,role:x.role,unit:x.unit,pwchanged:!!x.pwchanged};try{sessionStorage.setItem(LS+'me',JSON.stringify(me))}catch(e){}return me},
  async logout(){try{sessionStorage.removeItem(LS+'me')}catch(e){}},
  async loadAdmin(){return lsGet('state')},
  async saveAdmin(st,cards,pub){const old=lsGet('state'),v=lsGet('vers')||[];if(old&&(!v[0]||Date.now()-Date.parse(v[0].saved_at)>600000)){const h=Date.now(),vd=lsGet('verdata')||{};vd[h]=old;v.unshift({hid:h,saved_at:new Date().toISOString()});v.splice(30);for(const k in vd)if(!v.some(x=>x.hid==k))delete vd[k];lsSet('verdata',vd);lsSet('vers',v)}lsSet('state',st);lsSet('cards',cards);lsSet('pub',pub)},
  async loadUnit(unit){return{card:(lsGet('cards')||{})[unit]||null,pub:lsGet('pub')||{}}},
  async listUsers(){return(lsGet('users')||[]).map(({u,role,unit})=>({u,role,unit}))},
  async createUser(u,pw,role,unit){const us=lsGet('users')||[];if(us.some(x=>x.u===u))throw Error('Υπάρχει ήδη');us.push({u,h:await hash(pw),role,unit});lsSet('users',us)},
- async resetPassword(u,pw){const us=lsGet('users')||[];const x=us.find(y=>y.u===u);x.h=await hash(pw);lsSet('users',us)},
- async changePassword(me,pw){return this.resetPassword(me.u,pw)},
+ async resetPassword(u,pw){const us=lsGet('users')||[];const x=us.find(y=>y.u===u);x.h=await hash(pw);x.pwchanged=false;lsSet('users',us)},
+ async changePassword(me,pw){await this.resetPassword(me.u,pw);const us=lsGet('users');us.find(y=>y.u===me.u).pwchanged=true;lsSet('users',us)},
  async listVersions(){return lsGet('vers')||[]},
  async listRequests(){return lsGet('req')||[]},async addRequest(me,title,text){const r=lsGet('req')||[];r.unshift({id:Date.now(),unit_id:me.unit,title,text,status:'open',reply:'',created_at:new Date().toISOString()});lsSet('req',r)},
  async updateRequest(id,patch){const r=lsGet('req')||[];Object.assign(r.find(x=>x.id==id),patch);lsSet('req',r)},
@@ -154,7 +154,7 @@ const SupaBackend={demo:false,sb:null,
  async init(){await new Promise((ok,no)=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';s.onload=ok;s.onerror=()=>no(Error('Δεν φορτώθηκε το Supabase'));document.head.append(s)});
   this.sb=supabase.createClient(CONFIG.supabaseUrl,CONFIG.supabaseKey);const{data}=await this.sb.auth.getSession();return data.session?this.profile():null},
  async profile(){const{data:{user}}=await this.sb.auth.getUser();if(!user)return null;const{data,error}=await this.sb.from('profiles').select('*').eq('user_id',user.id).maybeSingle();
-  if(error)throw Error('Σφάλμα βάσης: '+error.message);if(!data)throw Error('Ο λογαριασμός δεν έχει ρόλο. Επικοινώνησε με τον διαχειριστή.');return{u:data.username,role:data.role,unit:data.unit_id}},
+  if(error)throw Error('Σφάλμα βάσης: '+error.message);if(!data)throw Error('Ο λογαριασμός δεν έχει ρόλο. Επικοινώνησε με τον διαχειριστή.');return{u:data.username,role:data.role,unit:data.unit_id,pwchanged:!!user.user_metadata?.pwchanged}},
  async login(u,pw){const{error}=await this.sb.auth.signInWithPassword({email:this.email(u),password:pw});if(error)throw Error('Λάθος όνομα χρήστη ή κωδικός');return this.profile()},
  async logout(){await this.sb.auth.signOut()},
  async loadAdmin(){const{data,error}=await this.sb.from('app_state').select('data').eq('id',1).maybeSingle();if(error)throw error;return data?.data||null},
@@ -168,7 +168,7 @@ const SupaBackend={demo:false,sb:null,
   const{data,error}=await tmp.auth.signUp({email:this.email(u),password:pw});if(error)throw error;if(!data.user)throw Error('Δεν δημιουργήθηκε χρήστης');
   const r=await this.sb.from('profiles').insert({user_id:data.user.id,username:u,role,unit_id:unit});if(r.error)throw r.error},
  async resetPassword(u,pw){const{error}=await this.sb.rpc('admin_set_password',{p_username:u,p_password:pw});if(error)throw Error(error.message.includes('admin_set_password')?'Τρέξε πρώτα το admin.sql στο Supabase':error.message)},
- async changePassword(me,pw){const{error}=await this.sb.auth.updateUser({password:pw});if(error)throw error},
+ async changePassword(me,pw){const{error}=await this.sb.auth.updateUser({password:pw,data:{pwchanged:true}});if(error)throw error},
  async resetAll(){throw Error('Δεν επιτρέπεται στην κανονική λειτουργία')},
  async listRequests(){const{data,error}=await this.sb.from('requests').select('*').order('created_at',{ascending:false});if(error)throw Error(error.message.includes('requests')?'Τρέξε πρώτα το features.sql στο Supabase':error.message);return data},
  async addRequest(me,title,text){const{error}=await this.sb.from('requests').insert({unit_id:me.unit,title,text});if(error)throw error},
@@ -312,10 +312,13 @@ function vUnits(){const users=unitData?.users||[];const has=id=>users.find(x=>x.
  ${u.meters.map((m,i)=>`<div class="row"><label>Ωρομετρητής<input value="${esc(m.label)}" disabled></label><label>Χιλ. παγίου<input data-mxp="${i}" inputmode="decimal" value="${m.xp}"></label><label>Χιλ. θέρμανσης<input data-mxt="${i}" inputmode="decimal" value="${m.xt}"></label></div>`).join('<br>')}
  <br><div class="row"><button class="p fx">Αποθήκευση</button><button type="button" class="fx" id="ucancel">Άκυρο</button></div></form></div>`:'';
  const sum=k=>S.units.reduce((a,x)=>a+num(x[k]),0),st=Math.round(S.units.reduce((a,x)=>a+x.meters.reduce((b,m)=>b+m.xt,0),0)*100)/100;
- return F+`<div class="card"><div class="scroll"><table><tr><th>Διαμέρισμα</th><th>Λογαριασμός</th><th>Ιδιοκτήτης / Ένοικος</th><th>Όροφος</th><th class="n">Χιλ. κοιν.</th><th class="n">Χιλ. ανελκ.</th><th class="n">Χιλ. θέρμ.</th><th></th></tr>
+ const miss=S.units.filter(x=>!has(x.id)).length;
+ return`<div id="pwout" class="card" style="display:none;border-color:var(--pri);background:var(--pri2)"></div>`+F+`<div class="card"><h2>Κωδικοί σύνδεσης</h2><p class="mut">Όνομα χρήστη κάθε διαμερίσματος: a1, a2, a3, b1 … e1. Βάλε έναν αρχικό κωδικό για όλους· με την πρώτη σύνδεση ο ένοικος βλέπει μήνυμα να τον αλλάξει. Προσοχή: όσο δεν τον αλλάζουν, όποιος ξέρει τον κοινό κωδικό μπορεί να δει ξένη καρτέλα.</p>
+ <div class="row"><label style="flex:0 1 240px">Αρχικός κωδικός (τουλάχιστον 6 χαρακτήρες)<input id="defpw" value="${esc(S.settings.defaultPw||'')}" autocomplete="off"></label><button class="p fx" id="mkall" ${miss?'':'disabled'}>Δημιουργία λογαριασμών που λείπουν (${miss})</button><button class="fx" id="pwall">Ορισμός σε όλους τους υπάρχοντες</button></div></div>
+ <div class="card"><div class="scroll"><table><tr><th>Διαμέρισμα</th><th>Λογαριασμός</th><th>Ιδιοκτήτης / Ένοικος</th><th>Όροφος</th><th class="n">Χιλ. κοιν.</th><th class="n">Χιλ. ανελκ.</th><th class="n">Χιλ. θέρμ.</th><th></th></tr>
  ${S.units.map(x=>{const a=has(x.id);return`<tr><td>${esc(x.label)}</td><td>${a?`<span class="st ok">Ενεργός</span><div class="mut">${esc(a.u)}</div>`:'<span class="st bad">Χωρίς λογαριασμό</span>'}</td><td>${esc(x.owner)}${x.rented?' <span class="tag w">ενοικιάζεται</span>':''}${x.tenant?`<div class="mut">Ένοικος: ${esc(x.tenant)}</div>`:''}<div class="mut">${esc(recips(x).join(', '))}</div></td><td>${esc(x.floor)}</td><td class="n">${x.xe}</td><td class="n">${x.xa}</td><td class="n">${x.meters.map(m=>m.xt).join('+')}</td>
  <td class="fx"><button class="sm" data-eu="${x.id}">Επεξεργασία</button> ${a?`<button class="sm" data-pw="${esc(a.u)}">Νέος κωδικός</button>`:`<button class="sm p" data-mk="${x.id}">Δημιουργία λογαριασμού</button>`}</td></tr>`}).join('')}
- <tr><td colspan=4><b>Αθροιστικά χιλιοστά</b></td><td class="n ${sum('xe')===1000?'ok':'bad'}">${sum('xe')}</td><td class="n ${sum('xa')===1000?'ok':'bad'}">${sum('xa')}</td><td class="n">${st}</td><td></td></tr></table></div><p id="pwout"></p></div>`}
+ <tr><td colspan=4><b>Αθροιστικά χιλιοστά</b></td><td class="n ${sum('xe')===1000?'ok':'bad'}">${sum('xe')}</td><td class="n ${sum('xa')===1000?'ok':'bad'}">${sum('xa')}</td><td class="n">${st}</td><td></td></tr></table></div></div>`}
 
 function vBills(){const tabs=[['draft','Δαπάνες προς έκδοση'],['byexp','Κοινόχρηστα ανά δαπάνη'],['byunit','Κοινόχρηστα ανά διαμέρισμα'],['issued','Εκδοθέντα & εκτυπώσεις']];
  return`<div class="seg">${tabs.map(([k,t])=>`<button data-sub="${k}" class="${sub===k?'on':''}">${t}</button>`).join('')}</div>`+({draft:vDraft,byexp:vByExp,byunit:vByUnit,issued:vIssued}[sub]||vDraft)()}
@@ -392,7 +395,7 @@ function vReports(){const years=[...new Set(issued().map(p=>p.id.slice(0,4)))].s
 
 /* ---------------- οθόνες διαμερίσματος ---------------- */
 function uHome(){const{card:c,pub}=unitData;if(!c)return'<div class="card mut">Δεν υπάρχουν ακόμα στοιχεία για το διαμέρισμά σου.</div>';const b=c.balance,n=c.notices[0];
- return`<div class="card"><span class="mut">Διαμέρισμα ${esc(c.unit.label)} · ${esc(c.unit.owner)}${c.unit.tenant?' · ένοικος: '+esc(c.unit.tenant):''}</span><div class="big ${b>0?'bad':'ok'}">${b>0?eur(b):b<0?'Πίστωση '+eur(-b):'Εξοφλημένο'}</div><span class="mut">${b>0?'Οφειλή από εκδοθέντα κοινόχρηστα':'Δεν υπάρχει οφειλή'}</span>
+ return`${me.pwchanged?'':`<div class="card" style="border-color:var(--warn);background:var(--warnb)"><b>Άλλαξε τον αρχικό κωδικό σου</b><div class="row" style="margin-top:6px"><span class="mut">Για να βλέπεις μόνο εσύ την καρτέλα του διαμερίσματος.</span><button class="p fx" data-page="key">Αλλαγή κωδικού</button></div></div>`}<div class="card"><span class="mut">Διαμέρισμα ${esc(c.unit.label)} · ${esc(c.unit.owner)}${c.unit.tenant?' · ένοικος: '+esc(c.unit.tenant):''}</span><div class="big ${b>0?'bad':'ok'}">${b>0?eur(b):b<0?'Πίστωση '+eur(-b):'Εξοφλημένο'}</div><span class="mut">${b>0?'Οφειλή από εκδοθέντα κοινόχρηστα':'Δεν υπάρχει οφειλή'}</span>
  ${pub.iban&&c.ref?`<div style="margin-top:14px;padding:12px;border-radius:10px;background:var(--pri2)">Πληρωμή με έμβασμα στο IBAN <b>${esc(pub.iban)}</b>${pub.bank?' ('+esc(pub.bank)+')':''}<br>Αιτιολογία: <b>${esc(c.ref)}</b> <button class="sm" id="copyref" data-v="${esc(c.ref)}">Αντιγραφή</button></div>`:''}</div>
  ${n?`<div class="card"><div class="row"><div><b>Τελευταίο ειδοποιητήριο: ${esc(plabel(n.pid))}</b><div class="mut">${eur(n.tot)} · <span class="st ${STATUS[n.status][0]}">${STATUS[n.status][1]}</span></div></div><button class="fx" data-upn="0">Εκτύπωση</button><button class="fx" data-ushow="0">Προβολή</button></div></div>`:''}
  ${c.current?`<div class="card"><h2>${esc(plabel(c.current.pid))} · σε εξέλιξη</h2><div class="row"><div><span class="mut">Το μερίδιό σου μέχρι τώρα</span><div class="big" style="font-size:26px">${eur(c.current.tot)}</div>${c.unit.rented&&c.current.own?`<span class="mut">ενοικιαστής ${eur(c.current.ten)} · ιδιοκτήτης ${eur(c.current.own)}</span>`:''}</div>
@@ -452,7 +455,7 @@ function bind(){
   $$('[data-vote]').forEach(b=>b.onclick=async()=>{try{await B.vote(me,b.dataset.vote,b.dataset.ch);await loadLive();render();toast('Η ψήφος καταγράφηκε')}catch(e){toast(e.message)}});
   if($('#rqf'))$('#rqf').onsubmit=async e=>{e.preventDefault();try{await B.addRequest(me,$('#rqt').value.trim(),$('#rqx').value.trim());await loadLive();render();toast('Στάλθηκε στον διαχειριστή')}catch(err){toast(err.message)}};
   $$('[data-yprint]').forEach(b=>b.onclick=()=>doPrint('<div class="notice"><h3>Ετήσια κατάσταση – Διαμέρισμα '+esc(unitData.card.unit.label)+'</h3>'+$('#yr'+b.dataset.yprint).innerHTML+'</div>'));
-  if($('#kf'))$('#kf').onsubmit=async e=>{e.preventDefault();if($('#k1').value!==$('#k2').value){toast('Οι κωδικοί δεν ταιριάζουν');return}try{await B.changePassword(me,$('#k1').value);toast('Ο κωδικός άλλαξε');e.target.reset()}catch(err){toast(err.message)}};return}
+  if($('#kf'))$('#kf').onsubmit=async e=>{e.preventDefault();if($('#k1').value!==$('#k2').value){toast('Οι κωδικοί δεν ταιριάζουν');return}try{await B.changePassword(me,$('#k1').value);me.pwchanged=true;toast('Ο κωδικός άλλαξε');e.target.reset()}catch(err){toast(err.message)}};return}
  /* γενικά */
  $$('[data-todo]').forEach(c=>c.onchange=()=>{const t=S.todos.find(x=>x.id===c.dataset.todo);t.done=c.checked;save()});$$('[data-tdel]').forEach(b=>b.onclick=()=>{S.todos=S.todos.filter(x=>x.id!==b.dataset.tdel);save()});if($('#tf2'))$('#tf2').onsubmit=e=>{e.preventDefault();const v=$('#tt').value.trim();if(v){S.todos.push({id:uid(),text:v,done:false,date:today()});save()}};
  if($('#goreq'))$('#goreq').onclick=()=>{page='comm';csub='req';render()};
@@ -481,9 +484,18 @@ function bind(){
   $('#uf').onsubmit=e=>{e.preventDefault();Object.assign(u,{owner:$('#uo').value.trim(),ownerEmail:$('#uoe').value.trim(),tenant:$('#ut').value.trim(),tenantEmail:$('#ute').value.trim(),floor:$('#ufl').value.trim(),xe:num($('#uxe').value),xa:num($('#uxa').value),opening:toC($('#uop').value),rented:$('#urent').checked});
    $$('[data-mxp]').forEach(i=>u.meters[+i.dataset.mxp].xp=num(i.value));$$('[data-mxt]').forEach(i=>u.meters[+i.dataset.mxt].xt=num(i.value));editId=null;save();toast('Αποθηκεύτηκε')}}
  const pwgen=()=>Math.random().toString(36).slice(2,6)+Math.floor(1000+Math.random()*9000);
- $$('[data-mk]').forEach(b=>b.onclick=async()=>{const u=unitOf(b.dataset.mk),name=u.id.toLowerCase(),pw=pwgen();b.disabled=true;
-  try{await B.createUser(name,pw,'unit',u.id);unitData.users=await B.listUsers();render();$('#pwout').innerHTML=`Λογαριασμός <b>${esc(u.label)}</b>: όνομα χρήστη <b>${esc(name)}</b>, κωδικός <b style="font-size:18px">${esc(pw)}</b>. Σημείωσέ τον και δώσ' τον στον ένοικο.`}catch(err){b.disabled=false;toast(err.message)}});
- $$('[data-pw]').forEach(b=>b.onclick=async()=>{const pw=pwgen();try{await B.resetPassword(b.dataset.pw,pw);$('#pwout').innerHTML=`Νέος κωδικός για <b>${esc(b.dataset.pw)}</b>: <b style="font-size:18px">${esc(pw)}</b>`}catch(err){toast(err.message)}});
+ const pwShow=h=>{const o=$('#pwout');o.style.display='block';o.innerHTML=h;o.scrollIntoView({behavior:'smooth',block:'center'})};
+ const defPw=()=>{const v=$('#defpw').value.trim();if(v.length<6){toast('Ο αρχικός κωδικός θέλει τουλάχιστον 6 χαρακτήρες');return null}S.settings.defaultPw=v;save();return v};
+ $$('[data-mk]').forEach(b=>b.onclick=async()=>{const u=unitOf(b.dataset.mk),name=u.id.toLowerCase(),pw=($('#defpw').value.trim().length>=6?$('#defpw').value.trim():pwgen());b.disabled=true;b.textContent='…';
+  try{await B.createUser(name,pw,'unit',u.id);unitData.users=await B.listUsers();render();pwShow(`Λογαριασμός <b>${esc(u.label)}</b>: όνομα χρήστη <b>${esc(name)}</b>, κωδικός <b style="font-size:18px">${esc(pw)}</b>`)}catch(err){render();toast('Σφάλμα: '+err.message)}});
+ $$('[data-pw]').forEach(b=>b.onclick=async()=>{const pw=($('#defpw').value.trim().length>=6?$('#defpw').value.trim():pwgen());b.disabled=true;b.textContent='…';
+  try{await B.resetPassword(b.dataset.pw,pw);b.textContent='Νέος κωδικός';b.disabled=false;pwShow(`Νέος κωδικός για <b>${esc(b.dataset.pw)}</b>: <b style="font-size:18px">${esc(pw)}</b>`)}catch(err){b.textContent='Νέος κωδικός';b.disabled=false;pwShow(`<span class="bad">Δεν άλλαξε ο κωδικός: ${esc(err.message)}</span>`)}});
+ if($('#mkall'))$('#mkall').onclick=async()=>{const pw=defPw();if(!pw)return;$('#mkall').disabled=true;$('#mkall').textContent='Δημιουργία…';const ok=[],bad=[];
+  for(const u of S.units){if(unitData.users.find(x=>x.unit===u.id))continue;try{await B.createUser(u.id.toLowerCase(),pw,'unit',u.id);ok.push(u.label)}catch(e){bad.push(u.label+': '+e.message)}}
+  unitData.users=await B.listUsers();render();pwShow(`Δημιουργήθηκαν ${ok.length} λογαριασμοί (${esc(ok.join(', '))}) με κωδικό <b style="font-size:18px">${esc(pw)}</b>.${bad.length?'<br><span class="bad">Σφάλματα: '+esc(bad.join(' · '))+'</span>':''}`)};
+ if($('#pwall'))$('#pwall').onclick=async()=>{const pw=defPw();if(!pw)return;if(!confirm('Ο κωδικός όλων των διαμερισμάτων θα γίνει «'+pw+'». Συνέχεια;'))return;const ok=[],bad=[];
+  for(const x of unitData.users.filter(x=>x.role==='unit')){try{await B.resetPassword(x.u,pw);ok.push(x.u)}catch(e){bad.push(x.u+': '+e.message)}}
+  pwShow(`Ο κωδικός άλλαξε σε ${ok.length} λογαριασμούς.${bad.length?'<br><span class="bad">'+esc(bad.join(' · '))+'</span>':''}`)};
  /* κοινόχρηστα */
  $$('[data-sub]').forEach(b=>b.onclick=()=>{sub=b.dataset.sub;render()});
  if($('#newp'))$('#newp').onclick=()=>{const id=$('#nm').value;if(!id)return;if(per(id)){toast('Ο μήνας υπάρχει ήδη');return}

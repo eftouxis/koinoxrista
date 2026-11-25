@@ -8,7 +8,8 @@ begin
   if length(p_password) < 6 then raise exception 'Ο κωδικός θέλει τουλάχιστον 6 χαρακτήρες'; end if;
   select user_id into v from profiles where username = p_username;
   if v is null then raise exception 'Δεν βρέθηκε ο χρήστης'; end if;
-  update auth.users set encrypted_password = extensions.crypt(p_password, extensions.gen_salt('bf')), updated_at = now() where id = v;
+  update auth.users set encrypted_password = extensions.crypt(p_password, extensions.gen_salt('bf')),
+    raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) - 'pwchanged', updated_at = now() where id = v;
 end $$;
 revoke all on function public.admin_set_password(text, text) from public, anon;
 grant execute on function public.admin_set_password(text, text) to authenticated;
