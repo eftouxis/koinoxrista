@@ -186,7 +186,7 @@ const per=id=>S.periods.find(p=>p.id===id);
 const issued=()=>S.periods.filter(p=>p.status==='issued').sort((a,b)=>a.id.localeCompare(b.id));
 const draft=()=>S.periods.find(p=>p.status==='draft');
 const venName=id=>S.vendors.find(v=>v.id===id)?.name||'';
-function save(){render();clearTimeout(saveTimer);saving='…';saveTimer=setTimeout(async()=>{try{const{cards,pub}=derive();await B.saveAdmin(S,cards,pub);saving='✓ αποθηκεύτηκε'}catch(e){saving='✕ σφάλμα αποθήκευσης';toast('Σφάλμα αποθήκευσης: '+(e.message||e))}const x=$('#saving');if(x)x.textContent=saving},500)}
+function save(){render();clearTimeout(saveTimer);saving='…';saveTimer=setTimeout(async()=>{try{const{cards,pub}=derive();await B.saveAdmin(S,cards,pub);saving='✓ αποθηκεύτηκε'}catch(e){saving='✕ σφάλμα αποθήκευσης';const m=String(e.message||e);toast(/row-level|permission|42501/i.test(m)?'Δεν αποθηκεύτηκε: σε αυτόν τον browser έχει γίνει σύνδεση και ως διαμέρισμα. Άνοιξε το διαμέρισμα σε ανώνυμο παράθυρο και ξανασυνδέσου ως admin.':'Σφάλμα αποθήκευσης: '+m)}const x=$('#saving');if(x)x.textContent=saving},500)}
 
 /* ---------------- υπολογισμοί ---------------- */
 function allocate(c,w){const W=w.reduce((a,b)=>a+b,0);if(!W||!c)return w.map(()=>0);const raw=w.map(x=>c*x/W),fl=raw.map(Math.floor);let r=c-fl.reduce((a,b)=>a+b,0);
@@ -260,6 +260,10 @@ function doPost(e) {
   if (d.key !== KEY) return ContentService.createTextOutput('no');
   MailApp.sendEmail({ to: d.to, subject: d.subject, htmlBody: d.html, name: d.from });
   return ContentService.createTextOutput('ok');
+}
+// Για δοκιμή: διάλεξε testMail πάνω και πάτα Εκτέλεση
+function testMail() {
+  MailApp.sendEmail(Session.getActiveUser().getEmail(), 'Δοκιμή κοινοχρήστων', 'Η αποστολή από το script δουλεύει.');
 }`;
 
 /* ---------------- εικονίδια & μενού ---------------- */
@@ -290,7 +294,8 @@ function vBuilding(){const st=S.settings;const rec=st.recurring.map((r,i)=>`<tr>
  return`<div class="card"><h2>Στοιχεία</h2><form id="sf"><div class="row"><label>Όνομα<input id="s_name" value="${esc(st.name)}"></label><label>Διεύθυνση<input id="s_address" value="${esc(st.address)}"></label><label>ΑΦΜ πολυκατοικίας<input id="s_afm" value="${esc(st.afm)}"></label></div><br>
  <div class="row"><label>Διαχειριστής<input id="s_manager" value="${esc(st.manager)}"></label><label>IBAN<input id="s_iban" value="${esc(st.iban)}" placeholder="GR.."></label><label>Τράπεζα<input id="s_bank" value="${esc(st.bank)}"></label></div><br>
  <div class="row"><label>Πάγιο θέρμανσης %<input id="s_pagioPct" inputmode="decimal" value="${st.pagioPct}"></label><label>Κατανομή παγίου με<select id="s_pagioKey"><option value="xt" ${st.pagioKey!=='xp'?'selected':''}>Χιλ. θέρμανσης (όπως η Polygon)</option><option value="xp" ${st.pagioKey==='xp'?'selected':''}>Χιλ. παγίου (όπως το παλιό Excel)</option></select></label><label>Αρχικό ταμείο €<input id="s_openingCash" inputmode="decimal" value="${(st.openingCash/100).toFixed(2)}"></label><label>Αρχικό αποθεματικό €<input id="s_openingReserve" inputmode="decimal" value="${((st.openingReserve||0)/100).toFixed(2)}"></label></div><br>
- <div class="row"><label>URL αποστολής email (Apps Script)<input id="s_mailUrl" value="${esc(st.mailUrl)}" placeholder="https://script.google.com/macros/s/…/exec"></label><label>Μυστικό κλειδί<input id="s_mailKey" value="${esc(st.mailKey)}"></label></div><br><button class="p">Αποθήκευση</button></form></div>
+ <div class="row"><label>URL αποστολής email (Apps Script)<input id="s_mailUrl" value="${esc(st.mailUrl)}" placeholder="https://script.google.com/macros/s/…/exec"></label><label>Μυστικό κλειδί<input id="s_mailKey" value="${esc(st.mailKey)}"></label></div><br><button class="p">Αποθήκευση</button></form>
+ <div class="row" style="margin-top:12px"><label>Δοκιμαστικό email προς<input id="testto" type="email" placeholder="το δικό σου email"></label><button class="fx" id="testmail">Αποστολή δοκιμής</button></div><p class="mut">Αν δεν έρθει σε 2 λεπτά (κοίτα και στα ανεπιθύμητα), άνοιξε στο Apps Script το «Εκτελέσεις» (Executions) για να δεις το σφάλμα.</p></div>
  <div class="card"><h2>Πάγια μηνιαία έξοδα</h2><p class="mut">Μπαίνουν αυτόματα σε κάθε νέο μήνα.</p><div class="scroll"><table><tr><th>Περιγραφή</th><th>Κατηγορία</th><th>Συνεργάτης</th><th class="n">Ποσό</th><th></th></tr>${rec}</table></div><br>
  <form id="rf" class="row"><label>Κατηγορία<select id="rc">${catOpts()}</select></label><label>Περιγραφή<input id="rd"></label><label>Συνεργάτης<select id="rv">${venOpts()}</select></label><label style="flex:0 1 120px">Ποσό €<input id="ra" inputmode="decimal" required></label><button class="fx">Προσθήκη</button></form></div>
  <div class="card"><h2>Αποστολή email από το Gmail σου</h2><p class="mut">Φτιάξε ένα Google Apps Script με τον κώδικα, κάν' το ανάπτυξη ως εφαρμογή ιστού και βάλε πάνω το URL και το ίδιο μυστικό κλειδί.</p><pre>${esc(APPS_SCRIPT)}</pre><button class="sm" id="copyas">Αντιγραφή</button></div>
@@ -438,7 +443,7 @@ function render(){const app=$('#app');
  app.innerHTML=`<div class="layout"><aside><div class="brand">Κοινόχρηστα<small>${esc(nm)}</small></div><nav>${M.map(([k,t])=>`<button data-page="${k}" class="${page===k?'on':''}">${IC[k]||''}<span>${t}</span></button>`).join('')}</nav>
  <div class="foot">${esc(me.role==='admin'?'Διαχειριστής':'Διαμέρισμα '+(unitData.card?.unit.label||me.unit))}<button id="logout">Αποσύνδεση</button></div></aside>
  <div class="content">${B.demo?'<div class="demo">Δοκιμαστική λειτουργία: τα δεδομένα μένουν σε αυτή τη συσκευή μέχρι να συνδεθεί το Supabase.</div>':''}
- <div class="top"><h1>${esc(title)}</h1>${me.role==='admin'?`<span class="mut" id="saving">${esc(saving)}</span>`:''}<button class="sm" id="logout2">Αποσύνδεση</button></div><main>${V[page]()}</main></div></div>`;
+ <div class="top"><h1>${esc(title)}</h1>${me.role==='admin'?`<span class="mut" id="saving">${esc(saving)}</span>`:'<button class="sm" id="urefresh">↻ Ανανέωση</button>'}<button class="sm" id="logout2">Αποσύνδεση</button></div><main>${V[page]()}</main></div></div>`;
  bind()}
 async function loadLive(){live.err='';try{const[r,v]=await Promise.all([B.listRequests(),B.listVotes()]);live.req=r||[];live.votes=v||[]}catch(e){live.err=e.message}}
 async function afterLogin(){if(me.role==='admin'){S=await B.loadAdmin();if(!S){S=seedState();const{cards,pub}=derive();await B.saveAdmin(S,cards,pub)}unitData={users:await B.listUsers()};
@@ -451,7 +456,7 @@ const go=(p,s)=>{page=p;if(s)sub=s;editId=null;sel=null;render();scrollTo(0,0)};
 function bind(){
  $$('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));$$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go,'draft'));
  const lo=async()=>{await B.logout();me=null;S=null;unitData=null;render()};$('#logout').onclick=lo;if($('#logout2'))$('#logout2').onclick=lo;
- if(me.role!=='admin'){const N=unitData.card?.notices||[];
+ if(me.role!=='admin'){const N=unitData.card?.notices||[];if($('#urefresh'))$('#urefresh').onclick=async()=>{unitData=await B.loadUnit(me.unit);await loadLive();render();toast('Ενημερώθηκε')};
   $$('[data-upn]').forEach(b=>b.onclick=()=>doPrint(N[+b.dataset.upn].html));$$('[data-ushow]').forEach(b=>b.onclick=()=>showPrev(N[+b.dataset.ushow].html));
   const c=$('#copyref');if(c)c.onclick=()=>navigator.clipboard?.writeText(c.dataset.v).then(()=>toast('Αντιγράφηκε'),()=>toast(c.dataset.v));
   $$('[data-vote]').forEach(b=>b.onclick=async()=>{try{await B.vote(me,b.dataset.vote,b.dataset.ch);await loadLive();render();toast('Η ψήφος καταγράφηκε')}catch(e){toast(e.message)}});
@@ -470,6 +475,9 @@ function bind(){
   $$('[data-delrec]').forEach(b=>b.onclick=()=>{st.recurring.splice(+b.dataset.delrec,1);save()});
   $('#loadvers').onclick=async()=>{try{const V=await B.listVersions();$('#vers').innerHTML=V.length?`<div class="scroll"><table>${V.map(v=>`<tr><td>${new Date(v.saved_at).toLocaleString('el-GR')}</td><td class="fx"><button class="sm" data-ver="${v.hid}">Επαναφορά</button></td></tr>`).join('')}</table></div>`:'<p class="mut">Δεν υπάρχουν ακόμα εκδόσεις.</p>';
    $$('[data-ver]').forEach(b=>b.onclick=async()=>{if(!confirm('Επαναφορά σε αυτή την έκδοση; Η τρέχουσα μορφή θα κρατηθεί κι αυτή στις εκδόσεις.'))return;try{const d=await B.getVersion(b.dataset.ver);if(!d?.units)throw Error('κενή έκδοση');S=d;save();toast('Έγινε επαναφορά')}catch(e){toast('Σφάλμα: '+e.message)}})}catch(e){toast(e.message)}};
+  $('#testmail').onclick=async()=>{const to=$('#testto').value.trim(),u=$('#s_mailUrl').value.trim(),k=$('#s_mailKey').value.trim();if(!to||!u){toast('Βάλε URL αποστολής και email παραλήπτη');return}
+   if(!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(u)){toast('Το URL πρέπει να είναι της μορφής https://script.google.com/macros/s/…/exec');return}
+   try{await fetch(u,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({key:k,to,subject:'Δοκιμή – Κοινόχρηστα '+S.settings.name,from:'Κοινόχρηστα '+S.settings.name,html:'<p>Αν διαβάζεις αυτό, η αποστολή email της εφαρμογής δουλεύει.</p>'})});toast('Στάλθηκε αίτημα αποστολής· έλεγξε το email σου')}catch(e){toast('Αποτυχία σύνδεσης με το Apps Script: '+e.message)}};
   $('#copyas').onclick=()=>navigator.clipboard?.writeText(APPS_SCRIPT).then(()=>toast('Αντιγράφηκε'),()=>toast('Επίλεξε και αντίγραψε τον κώδικα'));
   $('#exp').onclick=()=>{const t=JSON.stringify(S);try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/json'}));a.download='koinoxrista-'+today()+'.json';a.click()}catch(e){}const o=$('#expout');o.style.display='block';o.value=t};
   $('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());
