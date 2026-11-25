@@ -138,12 +138,13 @@ const DemoBackend={demo:true,
   const me={u:x.u,role:x.role,unit:x.unit};try{sessionStorage.setItem(LS+'me',JSON.stringify(me))}catch(e){}return me},
  async logout(){try{sessionStorage.removeItem(LS+'me')}catch(e){}},
  async loadAdmin(){return lsGet('state')},
- async saveAdmin(st,cards,pub){lsSet('state',st);lsSet('cards',cards);lsSet('pub',pub)},
+ async saveAdmin(st,cards,pub){const old=lsGet('state'),v=lsGet('vers')||[];if(old&&(!v[0]||Date.now()-Date.parse(v[0].saved_at)>600000)){const h=Date.now(),vd=lsGet('verdata')||{};vd[h]=old;v.unshift({hid:h,saved_at:new Date().toISOString()});v.splice(30);for(const k in vd)if(!v.some(x=>x.hid==k))delete vd[k];lsSet('verdata',vd);lsSet('vers',v)}lsSet('state',st);lsSet('cards',cards);lsSet('pub',pub)},
  async loadUnit(unit){return{card:(lsGet('cards')||{})[unit]||null,pub:lsGet('pub')||{}}},
  async listUsers(){return(lsGet('users')||[]).map(({u,role,unit})=>({u,role,unit}))},
  async createUser(u,pw,role,unit){const us=lsGet('users')||[];if(us.some(x=>x.u===u))throw Error('Υπάρχει ήδη');us.push({u,h:await hash(pw),role,unit});lsSet('users',us)},
  async resetPassword(u,pw){const us=lsGet('users')||[];const x=us.find(y=>y.u===u);x.h=await hash(pw);lsSet('users',us)},
  async changePassword(me,pw){return this.resetPassword(me.u,pw)},
+ async listVersions(){return lsGet('vers')||[]},async getVersion(h){return(lsGet('verdata')||{})[h]},
  async resetAll(){['state','cards','pub','users'].forEach(k=>{try{localStorage.removeItem(LS+k)}catch(e){}});await this.logout()}};
 const SupaBackend={demo:false,sb:null,
  email:u=>u.includes('@')?u:u.toLowerCase()+'@'+CONFIG.loginDomain,
@@ -165,7 +166,9 @@ const SupaBackend={demo:false,sb:null,
   const r=await this.sb.from('profiles').insert({user_id:data.user.id,username:u,role,unit_id:unit});if(r.error)throw r.error},
  async resetPassword(){throw Error('Νέος κωδικός σε υπάρχοντα λογαριασμό γίνεται από το Supabase (Authentication → Users → Reset password).')},
  async changePassword(me,pw){const{error}=await this.sb.auth.updateUser({password:pw});if(error)throw error},
- async resetAll(){throw Error('Δεν επιτρέπεται στην κανονική λειτουργία')}};
+ async resetAll(){throw Error('Δεν επιτρέπεται στην κανονική λειτουργία')},
+ async listVersions(){const{data,error}=await this.sb.from('app_state_history').select('hid,saved_at').order('hid',{ascending:false}).limit(60);if(error)throw Error(error.message.includes('app_state_history')?'Τρέξε πρώτα το backup.sql στο Supabase':error.message);return data},
+ async getVersion(h){const{data,error}=await this.sb.from('app_state_history').select('data').eq('hid',h).maybeSingle();if(error)throw error;return data.data}};
 const B=CONFIG.supabaseUrl&&CONFIG.supabaseKey?SupaBackend:DemoBackend;
 
 /* ---------------- κατάσταση ---------------- */
@@ -282,6 +285,7 @@ function vBuilding(){const st=S.settings;const rec=st.recurring.map((r,i)=>`<tr>
  <div class="card"><h2>Πάγια μηνιαία έξοδα</h2><p class="mut">Μπαίνουν αυτόματα σε κάθε νέο μήνα.</p><div class="scroll"><table><tr><th>Περιγραφή</th><th>Κατηγορία</th><th>Συνεργάτης</th><th class="n">Ποσό</th><th></th></tr>${rec}</table></div><br>
  <form id="rf" class="row"><label>Κατηγορία<select id="rc">${catOpts()}</select></label><label>Περιγραφή<input id="rd"></label><label>Συνεργάτης<select id="rv">${venOpts()}</select></label><label style="flex:0 1 120px">Ποσό €<input id="ra" inputmode="decimal" required></label><button class="fx">Προσθήκη</button></form></div>
  <div class="card"><h2>Αποστολή email από το Gmail σου</h2><p class="mut">Φτιάξε ένα Google Apps Script με τον κώδικα, κάν' το ανάπτυξη ως εφαρμογή ιστού και βάλε πάνω το URL και το ίδιο μυστικό κλειδί.</p><pre>${esc(APPS_SCRIPT)}</pre><button class="sm" id="copyas">Αντιγραφή</button></div>
+ <div class="card"><h2>Προηγούμενες εκδόσεις δεδομένων</h2><p class="mut">Αυτόματα, το πολύ μία ανά 10 λεπτά (τελευταίες 200). Αν κάτι χαλάσει, επανέφερε μια παλαιότερη.</p><div id="vers"><button class="sm" id="loadvers">Εμφάνιση εκδόσεων</button></div></div>
  <div class="card"><h2>Αντίγραφο ασφαλείας</h2><div class="row"><button class="fx" id="exp">Εξαγωγή δεδομένων (.json)</button><label class="fx">Επαναφορά ή εισαγωγή ιστορικού<input type="file" id="imp" accept=".json"></label>${B.demo?'<button class="d fx" id="reset">Μηδενισμός δοκιμαστικών</button>':''}</div><textarea id="expout" rows="3" style="display:none;margin-top:8px"></textarea></div>`}
 const catOpts=k=>Object.entries(CATS).map(([v,[t]])=>`<option value="${v}" ${v===k?'selected':''}>${esc(t)}</option>`).join('');
 const venOpts=k=>'<option value="">—</option>'+S.vendors.map(v=>`<option value="${v.id}" ${v.id===k?'selected':''}>${esc(v.name)}</option>`).join('');
@@ -415,6 +419,8 @@ function bind(){
    const pc=num($('#s_pagioPct').value);if(pc>=0&&pc<=100)st.pagioPct=pc;st.openingCash=toC($('#s_openingCash').value);st.openingReserve=toC($('#s_openingReserve').value);st.pagioKey=$('#s_pagioKey').value;save();toast('Αποθηκεύτηκε')};
   $('#rf').onsubmit=e=>{e.preventDefault();const c=$('#rc').value;st.recurring.push({cat:c,desc:$('#rd').value.trim()||CATS[c][0],amount:toC($('#ra').value),vendor:$('#rv').value});save()};
   $$('[data-delrec]').forEach(b=>b.onclick=()=>{st.recurring.splice(+b.dataset.delrec,1);save()});
+  $('#loadvers').onclick=async()=>{try{const V=await B.listVersions();$('#vers').innerHTML=V.length?`<div class="scroll"><table>${V.map(v=>`<tr><td>${new Date(v.saved_at).toLocaleString('el-GR')}</td><td class="fx"><button class="sm" data-ver="${v.hid}">Επαναφορά</button></td></tr>`).join('')}</table></div>`:'<p class="mut">Δεν υπάρχουν ακόμα εκδόσεις.</p>';
+   $$('[data-ver]').forEach(b=>b.onclick=async()=>{if(!confirm('Επαναφορά σε αυτή την έκδοση; Η τρέχουσα μορφή θα κρατηθεί κι αυτή στις εκδόσεις.'))return;try{const d=await B.getVersion(b.dataset.ver);if(!d?.units)throw Error('κενή έκδοση');S=d;save();toast('Έγινε επαναφορά')}catch(e){toast('Σφάλμα: '+e.message)}})}catch(e){toast(e.message)}};
   $('#copyas').onclick=()=>navigator.clipboard?.writeText(APPS_SCRIPT).then(()=>toast('Αντιγράφηκε'),()=>toast('Επίλεξε και αντίγραψε τον κώδικα'));
   $('#exp').onclick=()=>{const t=JSON.stringify(S);try{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'application/json'}));a.download='koinoxrista-'+today()+'.json';a.click()}catch(e){}const o=$('#expout');o.style.display='block';o.value=t};
   $('#imp').onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());
