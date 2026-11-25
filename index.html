@@ -91,7 +91,7 @@ const KEYS={koina:'Χιλ. κοινοχρήστων',asanser:'Χιλ. ανελκ
 const PAYER={enoikos:'Ένοικος',idioktitis:'Ιδιοκτήτης'};
 const CATS={kathar:['Καθαρισμός','koina','enoikos'],kipos:['Κηπουρός','koina','enoikos'],dei:['ΔΕΗ κοινοχρήστων','koina','enoikos'],eydap:['ΕΥΔΑΠ','koina','enoikos'],
  mikro:['Μικροέξοδα (λάμπες, αναλώσιμα)','koina','enoikos'],asanser:['Ασανσέρ – συντήρηση','asanser','enoikos'],asanser_ep:['Ασανσέρ – βλάβη / ανταλλακτικό','asanser','enoikos'],
- asanser_ergo:['Ασανσέρ – αντικατάσταση / εκσυγχρονισμός','asanser','idioktitis'],therm_syn:['Θέρμανση – συντήρηση / καμινάδα','therm','enoikos'],
+ asanser_ergo:['Ασανσέρ – αντικατάσταση / εκσυγχρονισμός','asanser','idioktitis'],therm_syn:['Θέρμανση – συντήρηση / καμινάδα','therm','enoikos'],therm_fixed:['Θέρμανση – πάγια τέλη αερίου (λογαριασμός χωρίς κατανάλωση)','therm','enoikos'],
  therm_ergo:['Θέρμανση – εγκατάσταση / εξοπλισμός','therm','idioktitis'],ergo:['Επισκευή / βελτίωση κτιρίου','koina','idioktitis'],
  asfaleia:['Ασφάλεια κτιρίου / πυροσβεστήρες','koina','idioktitis'],apothem:['Αποθεματικό','koina','idioktitis'],diax:['Αμοιβή διαχείρισης','koina','idioktitis'],trapeza:['Έξοδα τράπεζας','isa','enoikos'],isa:['Ισόποσο (απόφαση συνέλευσης)','isa','enoikos'],allo:['Άλλο','koina','enoikos']};
 const MONTHS=['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
@@ -281,6 +281,7 @@ function vHome(){const c=cash(),y=new Date().getFullYear()+'';const L=S.units.ma
  const pend=L.flatMap(({u,l})=>l.rows.filter(r=>r.status!=='paid').map(r=>({u,r}))).sort((a,b)=>b.r.pid.localeCompare(a.r.pid));
  return`<div class="kpis">${kpi('🏦','#e8f0fd','#1565d8',eur(c.bank),'Λογαριασμός τράπεζας')}${kpi('💶','#e8f0fd','#1565d8',eur(c.cashm),'Ποσό μετρητών')}${kpi('🧾','#fbe7f3','#b0306f',eur(yexp),'Δαπάνες έτους '+y)}
  ${kpi('📒','#e3f5ee','#14855f',eur(owed),'Οφειλές διαμερισμάτων',owed?'bad':'')}${kpi('€','#fbe7e5','#c0392b',eur(cred),'Τρέχουσες πιστώσεις')}${kpi('⏳','#fdf1e3','#b45309',eur(unpaidB),'Απλήρωτες δαπάνες κτιρίου')}${kpi('🛟','#e8f0fd','#1565d8',eur(finance().reserve),'Αποθεματικό')}</div>
+ <div class="card"><h2>Εκκρεμότητες πολυκατοικίας</h2><div class="scroll"><table>${(S.todos||[]).map(t=>`<tr><td style="width:36px"><input type="checkbox" data-todo="${t.id}" style="width:20px;height:20px" ${t.done?'checked':''}></td><td style="${t.done?'text-decoration:line-through;color:var(--mut)':''}">${esc(t.text)}</td><td class="fx"><button class="sm d" data-tdel="${t.id}">✕</button></td></tr>`).join('')}</table></div><form id="tf2" class="row" style="margin-top:8px"><label>Νέα εκκρεμότητα<input id="tt"></label><button class="fx">Προσθήκη</button></form></div>
  ${live.req.filter(r=>r.status==='open').length?`<div class="card" style="display:flex;gap:12px;align-items:center"><div style="flex:1"><b>Νέα αιτήματα / βλάβες: ${live.req.filter(r=>r.status==='open').length}</b></div><button class="fx" id="goreq">Προβολή</button></div>`:''}${draft()?`<div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><div style="flex:1"><b>Δαπάνες προς έκδοση: ${esc(plabel(draft().id))}</b><div class="mut">Σύνολο ${eur(calc(draft()).exp)}</div></div><button class="p fx" data-go="bills">Συνέχεια στα κοινόχρηστα</button></div>`:''}
  <div class="card"><h2>Συναλλαγές σε εκκρεμότητα</h2><div class="scroll"><table><tr><th>Κοινόχρηστο</th><th>Διαμέρισμα</th><th>Ονοματεπώνυμο</th><th>Κατάσταση</th><th class="n">Υπολείπεται</th><th></th></tr>
  ${pend.map(({u,r})=>`<tr><td>${pshort(r.pid)}</td><td>${esc(u.label)}</td><td>${esc(u.owner)}</td><td><span class="st ${STATUS[r.status][0]}">${STATUS[r.status][1]}</span></td><td class="n">${eur(r.rest)}</td><td class="fx"><button class="sm" data-payu="${u.id}" data-amt="${r.rest}">Πληρωμή</button></td></tr>`).join('')||'<tr><td colspan=6 class="mut">Καμία εκκρεμότητα</td></tr>'}</table></div></div>`}
@@ -436,7 +437,8 @@ function render(){const app=$('#app');
  bind()}
 async function loadLive(){live.err='';try{const[r,v]=await Promise.all([B.listRequests(),B.listVotes()]);live.req=r||[];live.votes=v||[]}catch(e){live.err=e.message}}
 async function afterLogin(){if(me.role==='admin'){S=await B.loadAdmin();if(!S){S=seedState();const{cards,pub}=derive();await B.saveAdmin(S,cards,pub)}unitData={users:await B.listUsers()};
-  S.docs=S.docs||[];S.polls=S.polls||[];if(!S.settings.migRented){['A3','B1'].forEach(k=>{const u=unitOf(k);if(u)u.rented=true});S.settings.migRented=true;save()}}
+  S.docs=S.docs||[];S.polls=S.polls||[];if(!S.todos){S.todos=['ΑΦΜ πολυκατοικίας (απόφαση συνέλευσης + ΑΑΔΕ)','Τράπεζα: λογαριασμός, χρεώσεις εισερχομένων, IRIS, κωδικοί RF','Viva: λογαριασμός πολυκατοικίας, πληρωμή με κάρτα, προμήθειες','Ασφάλεια αστικής ευθύνης πολυκατοικίας','Μελέτη αυτονομίας θέρμανσης: ποσοστό παγίου και κλειδί κατανομής','Polygon: παράδοση ταμείου, αποθεματικού και υπολοίπων ανά διαμέρισμα'].map(t=>({id:uid(),text:t,done:false,date:today()}));save()}
+  if(!S.settings.migRented){['A3','B1'].forEach(k=>{const u=unitOf(k);if(u)u.rented=true});S.settings.migRented=true;save()}}
  else unitData=await B.loadUnit(me.unit);await loadLive();page='home';render()}
 function showPrev(html){const d=$('#nprev');if(!d)return;d.innerHTML=`<div class="nprev">${html}</div>`;d.scrollIntoView({behavior:'smooth'})}
 const go=(p,s)=>{page=p;if(s)sub=s;editId=null;sel=null;render();scrollTo(0,0)};
@@ -452,6 +454,7 @@ function bind(){
   $$('[data-yprint]').forEach(b=>b.onclick=()=>doPrint('<div class="notice"><h3>Ετήσια κατάσταση – Διαμέρισμα '+esc(unitData.card.unit.label)+'</h3>'+$('#yr'+b.dataset.yprint).innerHTML+'</div>'));
   if($('#kf'))$('#kf').onsubmit=async e=>{e.preventDefault();if($('#k1').value!==$('#k2').value){toast('Οι κωδικοί δεν ταιριάζουν');return}try{await B.changePassword(me,$('#k1').value);toast('Ο κωδικός άλλαξε');e.target.reset()}catch(err){toast(err.message)}};return}
  /* γενικά */
+ $$('[data-todo]').forEach(c=>c.onchange=()=>{const t=S.todos.find(x=>x.id===c.dataset.todo);t.done=c.checked;save()});$$('[data-tdel]').forEach(b=>b.onclick=()=>{S.todos=S.todos.filter(x=>x.id!==b.dataset.tdel);save()});if($('#tf2'))$('#tf2').onsubmit=e=>{e.preventDefault();const v=$('#tt').value.trim();if(v){S.todos.push({id:uid(),text:v,done:false,date:today()});save()}};
  if($('#goreq'))$('#goreq').onclick=()=>{page='comm';csub='req';render()};
  $$('[data-payu]').forEach(b=>b.onclick=()=>{page='tx';sel=b.dataset.payu;editId=+b.dataset.amt;render()});
  /* στοιχεία */
