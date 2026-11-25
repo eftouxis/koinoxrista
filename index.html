@@ -157,10 +157,11 @@ const SupaBackend={demo:false,sb:null,
   if(error)throw Error('Σφάλμα βάσης: '+error.message);if(!data)throw Error('Ο λογαριασμός δεν έχει ρόλο. Επικοινώνησε με τον διαχειριστή.');return{u:data.username,role:data.role,unit:data.unit_id,pwchanged:!!user.user_metadata?.pwchanged}},
  async login(u,pw){const{error}=await this.sb.auth.signInWithPassword({email:this.email(u),password:pw});if(error)throw Error('Λάθος όνομα χρήστη ή κωδικός');return this.profile()},
  async logout(){await this.sb.auth.signOut()},
- async loadAdmin(){const{data,error}=await this.sb.from('app_state').select('data').eq('id',1).maybeSingle();if(error)throw error;return data?.data||null},
- async saveAdmin(st,cards,pub){const now=new Date().toISOString();
+ async loadAdmin(){const{data,error}=await this.sb.from('app_state').select('data,updated_at').eq('id',1).maybeSingle();if(error)throw error;this.ver=data?.updated_at||null;return data?.data||null},
+ async saveAdmin(st,cards,pub){const cur=await this.sb.from('app_state').select('updated_at').eq('id',1).maybeSingle();if(cur.error)throw cur.error;
+  if(cur.data&&this.ver&&cur.data.updated_at!==this.ver&&new Date(cur.data.updated_at)>new Date(this.ver))throw Error('CONFLICT');const now=new Date().toISOString();
   const r=await Promise.all([this.sb.from('app_state').upsert({id:1,data:st,updated_at:now}),this.sb.from('public_info').upsert({id:1,data:pub,updated_at:now}),
-   this.sb.from('unit_cards').upsert(Object.entries(cards).map(([k,v])=>({unit_id:k,data:v,updated_at:now})))]);const e=r.find(x=>x.error);if(e)throw e.error},
+   this.sb.from('unit_cards').upsert(Object.entries(cards).map(([k,v])=>({unit_id:k,data:v,updated_at:now})))]);const e=r.find(x=>x.error);if(e)throw e.error;this.ver=now},
  async loadUnit(unit){const[c,p]=await Promise.all([this.sb.from('unit_cards').select('data').eq('unit_id',unit).maybeSingle(),this.sb.from('public_info').select('data').eq('id',1).maybeSingle()]);
   return{card:c.data?.data||null,pub:p.data?.data||{}}},
  async listUsers(){const{data}=await this.sb.from('profiles').select('username,role,unit_id');return(data||[]).map(x=>({u:x.username,role:x.role,unit:x.unit_id}))},
@@ -186,8 +187,10 @@ const per=id=>S.periods.find(p=>p.id===id);
 const issued=()=>S.periods.filter(p=>p.status==='issued').sort((a,b)=>a.id.localeCompare(b.id));
 const draft=()=>S.periods.find(p=>p.status==='draft');
 const venName=id=>S.vendors.find(v=>v.id===id)?.name||'';
-function save(){render();clearTimeout(saveTimer);saving='…';saveTimer=setTimeout(async()=>{try{const{cards,pub}=derive();await B.saveAdmin(S,cards,pub);saving='✓ αποθηκεύτηκε'}catch(e){saving='✕ σφάλμα αποθήκευσης';const m=String(e.message||e);toast(/row-level|permission|42501/i.test(m)?'Δεν αποθηκεύτηκε: σε αυτόν τον browser έχει γίνει σύνδεση και ως διαμέρισμα. Άνοιξε το διαμέρισμα σε ανώνυμο παράθυρο και ξανασυνδέσου ως admin.':'Σφάλμα αποθήκευσης: '+m)}const x=$('#saving');if(x)x.textContent=saving},500)}
+function save(){render();clearTimeout(saveTimer);saving='…';saveTimer=setTimeout(async()=>{try{const{cards,pub}=derive();await B.saveAdmin(S,cards,pub);saving='✓ αποθηκεύτηκε'}catch(e){saving='✕ σφάλμα αποθήκευσης';const m=String(e.message||e);if(m==='CONFLICT'){saving='✕ δεν αποθηκεύτηκε';const x=$('#saving');if(x)x.textContent=saving;showConflict();return}toast(/row-level|permission|42501/i.test(m)?'Δεν αποθηκεύτηκε: σε αυτόν τον browser έχει γίνει σύνδεση και ως διαμέρισμα. Άνοιξε το διαμέρισμα σε ανώνυμο παράθυρο και ξανασυνδέσου ως admin.':'Σφάλμα αποθήκευσης: '+m)}const x=$('#saving');if(x)x.textContent=saving},500)}
 
+function showConflict(){if($('#conflict'))return;const d=document.createElement('div');d.id='conflict';d.style.cssText='position:fixed;inset:0;background:#0008;z-index:20;display:grid;place-items:center;padding:16px';
+ d.innerHTML='<div class="card" style="max-width:440px"><h2>Τα δεδομένα άλλαξαν από αλλού</h2><p>Η εφαρμογή είναι ανοιχτή ως διαχειριστής και σε άλλη καρτέλα ή συσκευή, και εκεί έγινε πιο πρόσφατη αποθήκευση. Για να μη σβηστούν εκείνες οι αλλαγές, η τελευταία σου κίνηση εδώ <b>δεν αποθηκεύτηκε</b>.</p><p class="mut">Κλείσε τις άλλες καρτέλες, πάτα «Φόρτωση» και ξανακάνε την αλλαγή.</p><button class="p" onclick="location.reload()">Φόρτωση τελευταίων δεδομένων</button></div>';document.body.append(d)}
 /* ---------------- υπολογισμοί ---------------- */
 function allocate(c,w){const W=w.reduce((a,b)=>a+b,0);if(!W||!c)return w.map(()=>0);const raw=w.map(x=>c*x/W),fl=raw.map(Math.floor);let r=c-fl.reduce((a,b)=>a+b,0);
  raw.map((x,i)=>[x-fl[i],i]).sort((a,b)=>b[0]-a[0]).forEach(([,i])=>{if(r>0){fl[i]++;r--}});return fl}
