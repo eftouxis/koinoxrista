@@ -75,6 +75,7 @@ pre{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10
 @media print{body{background:#fff}#app,.toast{display:none!important}#print{display:block}@page{size:A4 landscape;margin:0}.sheet{page-break-after:always;break-after:page}}
 @media(min-width:901px){#logout2{display:none}}
 @media(max-width:900px){.layout{display:block}aside{width:auto;height:auto;position:sticky;top:0;z-index:5}aside .brand{padding:10px 14px;font-size:16px}aside nav{display:flex;overflow-x:auto;padding:6px;gap:4px;scrollbar-width:none}aside nav button{flex:none;width:auto;white-space:nowrap;margin:0;padding:8px 12px;font-size:14px}aside nav svg{display:none}.kpis{grid-template-columns:1fr 1fr;gap:10px}.kpi{padding:12px;gap:10px}.kpi i{width:34px;height:34px;font-size:16px}.kpi b{font-size:17px}.kpi span{font-size:12px}aside .foot{display:none}.top{padding:10px 14px}main{padding:16px 14px 50px}.demo{padding:8px 14px}.hide-s{display:none}}
+.mnew::placeholder{color:#a8a29e;opacity:1}.mnew.chg{border-color:#15803d;background:#f0fdf4;font-weight:600}.hchg{color:#15803d;font-weight:700}
 </style>
 </head>
 <body>
@@ -82,7 +83,7 @@ pre{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10
 <div id="print"></div>
 <script>
 /* ====== ΡΥΘΜΙΣΗ: μετά τη δημιουργία του Supabase βάλε εδώ URL και anon key ====== */
-const APP_VER='26/11 θ';
+const APP_VER='26/11 ι';
 const CONFIG={supabaseUrl:'https://csjcqxulwspmmwfgenig.supabase.co',supabaseKey:'sb_publishable_rbfYAfgoF1HHNUFwH9VcNw_oDbrAOkN',loginDomain:'polykatoikia.app'};
 </script>
 <script>
@@ -264,7 +265,7 @@ function doPrint(html){$('#print').innerHTML=html;setTimeout(()=>{try{window.pri
 
 /* ---------------- δεδομένα για τους ενοίκους (ό,τι βλέπει το κάθε διαμέρισμα) ---------------- */
 function derive(){const cards={},iss=issued(),d=draft(),dc=d?calc(d):null;
- for(const u of S.units){const L=ledger(u.id);cards[u.id]={unit:{id:u.id,label:u.label,owner:u.owner,tenant:u.tenant,rented:!!u.rented},meters:[...iss.filter(p=>!p.hist),...(d?[d]:[])].map(p=>({pid:p.id,draft:p.status==='draft',rows:u.meters.map(m=>{const x=p.readings?.[m.id];return x&&x.e!==''&&x.s!==''?{label:m.label,s:x.s,e:x.e,h:Math.round((num(x.e)-num(x.s))*100)/100}:null}).filter(Boolean)})).filter(x=>x.rows.length).reverse(),balance:L.balance,
+ for(const u of S.units){const L=ledger(u.id);cards[u.id]={unit:{id:u.id,label:u.label,owner:u.owner,tenant:u.tenant,rented:!!u.rented},mlog:(()=>{const L=mlog();const acc={};return L.map(x=>{for(const k in x.vals)acc[k]=x.vals[k];return{date:x.date,official:!!x.official,rows:u.meters.map(m=>({label:m.label,v:acc[m.id],chg:x.vals[m.id]!=null}))}}).filter(x=>x.rows.some(r=>r.chg)).reverse().slice(0,24)})(),meters:[...iss.filter(p=>!p.hist),...(d?[d]:[])].map(p=>({pid:p.id,draft:p.status==='draft',rows:u.meters.map(m=>{const x=p.readings?.[m.id];return x&&x.e!==''&&x.s!==''?{label:m.label,s:x.s,e:x.e,h:Math.round((num(x.e)-num(x.s))*100)/100}:null}).filter(Boolean)})).filter(x=>x.rows.length).reverse(),balance:L.balance,
   notices:iss.map(p=>{const r=L.rows.find(x=>x.pid===p.id);return{pid:p.id,issuedAt:p.issuedAt,tot:p.result.res[u.id].tot,status:r?r.status:'hist',rest:r?r.rest:0,lines:p.result.res[u.id].lines.map(l=>({desc:l.desc,amount:l.amount})),html:noticeHTML(p,u.id)}}).reverse(),
   payments:S.payments.filter(x=>x.unit===u.id).map(({date,amount,method})=>({date,amount,method})).sort((a,b)=>b.date.localeCompare(a.date)),
   ref:iss.length?ref(u,iss.at(-1).id):'',
@@ -364,8 +365,8 @@ function vUnits(){const users=unitData?.users||[];const has=id=>users.find(x=>x.
  <td class="fx"><button class="sm" data-eu="${x.id}">Επεξεργασία</button> ${a?`<button class="sm" data-pw="${esc(a.u)}">Νέος κωδικός</button>`:`<button class="sm p" data-mk="${x.id}">Δημιουργία λογαριασμού</button>`}</td></tr>`}).join('')}
  <tr><td colspan=4><b>Αθροιστικά χιλιοστά</b></td><td class="n ${sum('xe')===1000?'ok':'bad'}">${sum('xe')}</td><td class="n ${sum('xa')===1000?'ok':'bad'}">${sum('xa')}</td><td class="n">${st}</td><td></td></tr></table></div></div>`}
 
-function vBills(){const tabs=[['draft','Δαπάνες προς έκδοση'],['byexp','Κοινόχρηστα ανά δαπάνη'],['byunit','Κοινόχρηστα ανά διαμέρισμα'],['issued','Εκδοθέντα & εκτυπώσεις']];
- return`<div class="seg">${tabs.map(([k,t])=>`<button data-sub="${k}" class="${sub===k?'on':''}">${t}</button>`).join('')}</div>`+({draft:vDraft,byexp:vByExp,byunit:vByUnit,issued:vIssued}[sub]||vDraft)()}
+function vBills(){const tabs=[['draft','Δαπάνες προς έκδοση'],['byexp','Κοινόχρηστα ανά δαπάνη'],['byunit','Κοινόχρηστα ανά διαμέρισμα'],['issued','Εκδοθέντα & εκτυπώσεις'],['meters','Μετρητές θέρμανσης']];
+ return`<div class="seg">${tabs.map(([k,t])=>`<button data-sub="${k}" class="${sub===k?'on':''}">${t}</button>`).join('')}</div>`+({draft:vDraft,byexp:vByExp,byunit:vByUnit,issued:vIssued,meters:vMeters}[sub]||vDraft)()}
 function nextMonth(){const ids=S.periods.map(p=>p.id).sort();if(!ids.length)return today().slice(0,7);let[y,m]=ids.at(-1).split('-').map(Number);m++;if(m>12){m=1;y++}return y+'-'+String(m).padStart(2,'0')}
 function vDraft(){const p=draft();
  if(!p)return`<div class="card"><h2>Νέος μήνας</h2><p class="mut">Τα πάγια έξοδα μπαίνουν αυτόματα και οι αρχικές ενδείξεις παίρνονται από τον προηγούμενο μήνα.</p><div class="row"><label style="flex:0 1 220px">Μήνας<input type="month" id="nm" value="${nextMonth()}"></label><button class="p fx" id="newp">+ Άνοιγμα μήνα</button></div></div>`;
@@ -377,8 +378,15 @@ function vDraft(){const p=draft();
  <details style="flex-basis:100%"><summary class="mut">Άλλο κλειδί ή άλλος πληρωτής (μόνο αν το ορίζει ο κανονισμός)</summary><div class="row" style="margin-top:8px"><label>Κατανομή<select id="xk"><option value="">αυτόματα</option>${Object.entries(KEYS).map(([k,t])=>`<option value="${k}">${t}</option>`).join('')}</select></label><label>Βαρύνει<select id="xp"><option value="">αυτόματα</option><option value="enoikos">Ένοικο</option><option value="idioktitis">Ιδιοκτήτη</option></select></label></div></details></form><p class="mut" id="xhint"></p></div>
  <div class="card"><h2>Θέρμανση</h2><div class="row"><label>Λογαριασμός<input id="gd" value="${esc(p.gas?.desc)}"></label><label>Συνεργείο<select id="gv">${venOpts(p.gas?.vendor)}</select></label><label style="flex:0 1 140px">Ποσό €<input id="ga" inputmode="decimal" value="${p.gas?.amount?(p.gas.amount/100).toFixed(2):''}"></label></div>
  <p class="mut">Πάγιο ${String(S.settings.pagioPct).replace('.',',')}% με ${S.settings.pagioKey==='xp'?'χιλ. παγίου':'χιλ. θέρμανσης'}, το υπόλοιπο με ώρες × χιλ. θέρμανσης. Ο λογαριασμός πρέπει να αφορά την ίδια περίοδο με τις ενδείξεις.</p>
- <details ${p.gas?.amount?'open':''}><summary>Ενδείξεις ωρομετρητών</summary><div class="scroll"><table><tr><th>Μετρητής</th><th>Αρχή</th><th>Τέλος</th><th class="n">Ώρες</th></tr>
- ${S.units.flatMap(u=>u.meters.map(m=>{const r=p.readings[m.id]||{s:'',e:''},d=num(r.e)-num(r.s);return`<tr><td>${esc(m.label)}</td><td><input inputmode="decimal" data-rd="${m.id}|s" value="${esc(r.s)}"></td><td><input inputmode="decimal" data-rd="${m.id}|e" value="${esc(r.e)}"></td><td class="n ${d<0?'bad':''}">${(Math.round(d*100)/100).toString().replace('.',',')}</td></tr>`})).join('')}</table></div></details></div>
+ ${(()=>{const L=mlog(),opt=sel=>L.slice().reverse().map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${fdate(x.date)}${x.official?' · ΔΕΔΑ':''}</option>`).join('');
+  const a=L.find(x=>x.id===p.rs),b=L.find(x=>x.id===p.re),wa=a&&p.gas?.from?dayDiff(a.date,p.gas.from):null,wb=b&&p.gas?.to?dayDiff(b.date,p.gas.to):null;
+  const W=(w,t)=>w!=null&&Math.abs(w)>3?`<div class="bad" style="font-size:13px">Η καταμέτρηση απέχει ${Math.abs(w)} μέρες από ${t} του λογαριασμού</div>`:w!=null?`<div class="ok" style="font-size:13px">✓ κοντά στην ημερομηνία του λογαριασμού</div>`:'';
+  const tbl=allMeters().map(m=>{const r=p.readings[m.id];const d=r?num(r.e)-num(r.s):0;return`<tr><td>${esc(m.label)}</td><td class="n">${r?fnum(num(r.s)):'—'}</td><td class="n">${r?fnum(num(r.e)):'—'}</td><td class="n ${d<0?'bad':d>0?'hchg':''}">${fnum(d)}</td></tr>`}).join('');
+  return`<div class="row"><label style="flex:0 1 190px">Λογαριασμός από<input type="date" id="gfrom" value="${esc(p.gas?.from||'')}"></label><label style="flex:0 1 190px">έως<input type="date" id="gto" value="${esc(p.gas?.to||'')}"></label></div><p class="mut" style="margin:4px 0 10px">Οι ημερομηνίες ένδειξης του κεντρικού μετρητή, όπως γράφονται στον λογαριασμό.</p>
+  ${L.length>=2?`<div class="row"><label>Καταμέτρηση αρχής<select id="mrs"><option value="">—</option>${opt(p.rs)}</select>${W(wa,'την αρχή')}</label><label>Καταμέτρηση τέλους<select id="mre"><option value="">—</option>${opt(p.re)}</select>${W(wb,'το τέλος')}</label></div><br>`:`<p class="mut">Για να διαλέγεις καταμετρήσεις με ημερομηνία, πέρασέ τες στην καρτέλα <a href="#" id="gomet">Μετρητές θέρμανσης</a> (χρειάζονται τουλάχιστον δύο).</p>`}
+  <div class="scroll"><table><tr><th>Μετρητής</th><th class="n">Αρχή</th><th class="n">Τέλος</th><th class="n">Ώρες</th></tr>${tbl}</table></div>
+  <details><summary class="mut">Χειροκίνητη διόρθωση ενδείξεων</summary><div class="scroll"><table><tr><th>Μετρητής</th><th>Αρχή</th><th>Τέλος</th></tr>
+  ${S.units.flatMap(u=>u.meters.map(m=>{const r=p.readings[m.id]||{s:'',e:''};return`<tr><td>${esc(m.label)}</td><td><input inputmode="decimal" data-rd="${m.id}|s" value="${esc(r.s)}"></td><td><input inputmode="decimal" data-rd="${m.id}|e" value="${esc(r.e)}"></td></tr>`})).join('')}</table></div></details>`})()}</div>
  <div class="card"><p class="${ok?'ok':'bad'}" style="margin:0">${ok?'✓ Τα ποσά των διαμερισμάτων αθροίζουν ακριβώς στις δαπάνες':'✕ Διαφορά κατανομής: '+eur(c.exp-c.all)}</p><br><button class="d sm" id="delp">Διαγραφή μήνα</button></div>`}
 function srcPeriod(){return draft()||issued().at(-1)}
 function vByExp(){const p=srcPeriod();if(!p)return'<div class="card mut">Δεν υπάρχουν δαπάνες.</div>';const c=p.result&&p.status==='issued'?p.result:calc(p);
@@ -414,6 +422,29 @@ function vBpay(){const E=expList(),open=E.filter(e=>e.rest>0);
  ${[...S.bpay].sort((a,b)=>b.date.localeCompare(a.date)).map(x=>{const e=E.find(y=>y.ref===x.exp);return`<tr><td>${esc(venName(x.vendor))||'<span class="mut">—</span>'}</td><td>${fdate(x.date)}</td><td>${e?esc(pshort(e.pid)+' · '+e.desc):esc(x.desc||'Άλλο')}</td><td class="n">${eur(x.amount)}</td><td>${x.method==='Συμψηφισμός'?'Από ένοικο '+esc(unitOf(x.unit)?.label||''):esc(x.method)}</td><td class="fx"><button class="sm d" data-delb="${x.id}">✕</button></td></tr>`}).join('')||'<tr><td colspan=6 class="mut">Καμία πληρωμή</td></tr>'}</table></div></div>
  <div class="card"><h2>Απλήρωτες δαπάνες</h2><div class="scroll"><table><tr><th>Μήνας</th><th>Δαπάνη</th><th>Συνεργείο</th><th class="n">Ποσό</th><th class="n">Υπολείπεται</th></tr>${open.map(e=>`<tr><td>${pshort(e.pid)}</td><td>${esc(e.desc)}</td><td>${esc(venName(e.vendor))}</td><td class="n">${eur(e.amount)}</td><td class="n bad">${eur(e.rest)}</td></tr>`).join('')||'<tr><td colspan=5 class="mut">Όλες εξοφλημένες</td></tr>'}</table></div></div>`}
 
+
+/* ---------------- καταμετρήσεις ωρομετρητών ---------------- */
+const allMeters=()=>S.units.flatMap(u=>u.meters.map(m=>({...m,unit:u.label})));
+const mlog=()=>(S.meterLog||[]).slice().sort((a,b)=>a.date.localeCompare(b.date)||(a.t||0)-(b.t||0));
+function lastVals(){const L=mlog(),v={};
+ if(!L.length){const P=[...issued(),...(draft()?[draft()]:[])].filter(p=>p.readings);for(const p of P)for(const k in p.readings){const e=p.readings[k].e;if(e!==''&&e!=null)v[k]={val:num(e),date:''}}}
+ for(const x of L)for(const k in x.vals)v[k]={val:x.vals[k],date:x.date};return v}
+const fnum=v=>v==null||v===''?'':String(Math.round(v*100)/100).replace('.',',');
+const dayDiff=(a,b)=>a&&b?Math.round((new Date(a+'T12:00')-new Date(b+'T12:00'))/864e5):null;
+function closestSnap(date){const L=mlog();if(!L.length)return null;if(!date)return L.at(-1);return L.reduce((b,x)=>Math.abs(dayDiff(x.date,date))<Math.abs(dayDiff(b.date,date))?x:b)}
+function snapVals(id){const L=mlog(),i=L.findIndex(x=>x.id===id);if(i<0)return null;const v={};for(const x of L.slice(0,i+1))for(const k in x.vals)v[k]=x.vals[k];return v}
+function applySnaps(p){const a=p.rs&&snapVals(p.rs),b=p.re&&snapVals(p.re);if(!a||!b)return;p.readings={};for(const m of allMeters())if(a[m.id]!=null&&b[m.id]!=null)p.readings[m.id]={s:a[m.id],e:b[m.id]}}
+let mdate='';
+function vMeters(){const M=allMeters(),lv=lastVals(),L=mlog().slice().reverse();
+ const head=`<div class="card"><h2>Νέα καταμέτρηση</h2><p class="mut">Γράψε <b>μόνο</b> τους μετρητές που άλλαξαν. Οι υπόλοιποι κρατούν την τελευταία ένδειξη (το αχνό νούμερο). Για ακριβή κατανομή, η ημερομηνία καταμέτρησης πρέπει να είναι όσο πιο κοντά γίνεται στην ημερομηνία ένδειξης του κεντρικού μετρητή αερίου στον λογαριασμό.</p>
+  <div class="row"><label style="flex:0 1 200px">Ημερομηνία καταμέτρησης<input type="date" id="mdt" value="${mdate||today()}"></label><label style="display:flex;gap:8px;align-items:center;font-size:15px;color:var(--ink)"><input type="checkbox" id="moff" style="width:auto"> Μαζί με επίσημη καταμέτρηση του δικτύου (ΔΕΔΑ)</label></div><br>
+  <div class="scroll"><table><tr><th>Μετρητής</th><th class="n">Τελευταία ένδειξη</th><th>Νέα ένδειξη</th><th class="n">Ώρες</th></tr>
+  ${M.map(m=>{const l=lv[m.id];return`<tr><td><b>${esc(m.label)}</b></td><td class="n">${l?fnum(l.val):'—'}<div class="mut" style="font-size:12px">${l?.date?fdate(l.date):''}</div></td><td><input class="mnew" inputmode="decimal" data-mn="${m.id}" placeholder="${l?fnum(l.val):''}" style="max-width:140px"></td><td class="n" data-mh="${m.id}">—</td></tr>`}).join('')}</table></div><br>
+  <div class="row"><button class="p fx" id="msave">Καταχώριση καταμέτρησης</button><span class="mut" id="mcount"></span></div></div>`;
+ const cols=L.slice(0,12);
+ const hist=L.length?`<div class="card"><h2>Ιστορικό καταμετρήσεων</h2><p class="mut">Με έντονα γράμματα όσα άλλαξαν σε κάθε καταμέτρηση.</p><div class="scroll"><table><tr><th>Μετρητής</th>${cols.map(x=>`<th class="n">${fdate(x.date)}${x.official?'<br><span class="tag g">ΔΕΔΑ</span>':''}<br><button class="sm d" data-mdel="${x.id}" title="Διαγραφή">✕</button></th>`).join('')}</tr>
+  ${M.map(m=>`<tr><td>${esc(m.label)}</td>${cols.map(x=>{const v=snapVals(x.id)?.[m.id];return`<td class="n">${x.vals[m.id]!=null?`<b>${fnum(v)}</b>`:`<span class="mut">${fnum(v)}</span>`}</td>`}).join('')}</tr>`).join('')}</table></div></div>`:'';
+ return head+hist}
 
 /* ---------------- πρότυπα ανακοινώσεων ---------------- */
 const ANN_TPL=[
@@ -537,9 +568,9 @@ function uYear(){const c=unitData.card;if(!c)return'<div class="card mut">Δεν
   return`<div class="card" id="yr${y}"><div class="row"><h2 style="margin:0">${y}</h2><button class="sm fx" data-yprint="${y}">Εκτύπωση</button></div><div class="kpis" style="margin:10px 0"><div class="kpi"><div><b>${eur(ch)}</b><span>Κοινόχρηστα έτους</span></div></div><div class="kpi"><div><b>${eur(pd)}</b><span>Πληρωμές έτους</span></div></div></div>
   <div class="scroll"><table><tr><th>Μήνας</th><th class="n">Κοινόχρηστα</th></tr>${N.map(n=>`<tr><td>${esc(plabel(n.pid))}${n.status==='hist'?' <span class="mut">(Polygon)</span>':''}</td><td class="n">${eur(n.tot)}</td></tr>`).join('')}</table></div>
   ${P.length?`<br><div class="scroll"><table><tr><th>Πληρωμή</th><th>Τρόπος</th><th class="n">Ποσό</th></tr>${P.map(p=>`<tr><td>${fdate(p.date)}</td><td>${esc(p.method)}</td><td class="n">${eur(p.amount)}</td></tr>`).join('')}</table></div>`:''}</div>`}).join('')||'<div class="card mut">Δεν υπάρχουν στοιχεία.</div>'}
-function uMeters(){const M=unitData.card?.meters||[];if(!M.length)return'<div class="card mut">Δεν υπάρχουν ακόμα ενδείξεις ωρομετρητών.</div>';
+function uMeters(){const M=unitData.card?.meters||[],ML=unitData.card?.mlog||[];const mlh=ML.length?`<div class="card"><h2>Καταμετρήσεις</h2><div class="scroll"><table><tr><th>Ημερομηνία</th>${ML[0].rows.map(r=>`<th class="n">${esc(r.label)}</th>`).join('')}</tr>${ML.map(x=>`<tr><td>${fdate(x.date)}${x.official?' <span class="tag g">ΔΕΔΑ</span>':''}</td>${x.rows.map(r=>`<td class="n">${r.chg?'<b>'+fnum(r.v)+'</b>':fnum(r.v)}</td>`).join('')}</tr>`).join('')}</table></div></div>`:'';if(!M.length)return mlh||'<div class="card mut">Δεν υπάρχουν ακόμα ενδείξεις ωρομετρητών.</div>';
  const prevYear=(pid,label)=>{const[y,m]=pid.split('-');const q=M.find(x=>x.pid===(+y-1)+'-'+m);return q?.rows.find(r=>r.label===label)?.h};
- return`<div class="card"><div class="scroll"><table><tr><th>Μήνας</th><th>Μετρητής</th><th class="n">Αρχή</th><th class="n">Τέλος</th><th class="n">Ώρες</th><th class="n">Πέρσι</th></tr>${M.flatMap(x=>x.rows.map(r=>`<tr><td>${esc(plabel(x.pid))}${x.draft?' <span class="tag w">τρέχων</span>':''}</td><td>${esc(r.label)}</td><td class="n">${esc(r.s)}</td><td class="n">${esc(r.e)}</td><td class="n"><b>${String(r.h).replace('.',',')}</b></td><td class="n">${prevYear(x.pid,r.label)!=null?String(prevYear(x.pid,r.label)).replace('.',','):'—'}</td></tr>`)).join('')}</table></div></div>`}
+ return`<div class="card"><div class="scroll"><table><tr><th>Μήνας</th><th>Μετρητής</th><th class="n">Αρχή</th><th class="n">Τέλος</th><th class="n">Ώρες</th><th class="n">Πέρσι</th></tr>${M.flatMap(x=>x.rows.map(r=>`<tr><td>${esc(plabel(x.pid))}${x.draft?' <span class="tag w">τρέχων</span>':''}</td><td>${esc(r.label)}</td><td class="n">${esc(r.s)}</td><td class="n">${esc(r.e)}</td><td class="n"><b>${String(r.h).replace('.',',')}</b></td><td class="n">${prevYear(x.pid,r.label)!=null?String(prevYear(x.pid,r.label)).replace('.',','):'—'}</td></tr>`)).join('')}</table></div></div>`+mlh}
 function uPolls(){const P=[...(unitData.pub.polls||[])].reverse();if(!P.length)return'<div class="card mut">Καμία ψηφοφορία.</div>';
  return(live.err?`<div class="card bad">${esc(live.err)}</div>`:'')+P.map(pl=>{const V=live.votes.filter(v=>v.poll_id===pl.id),mine=V.find(v=>v.unit_id===me.unit);return`<div class="card"><b>${esc(pl.title)}</b><div class="mut">${fdate(pl.created)} · ${pl.open?'ανοιχτή':'κλειστή'} · ψήφισαν ${V.length}</div>
   ${pl.open?`<div class="row" style="margin:10px 0">${pl.options.map(o=>`<button class="fx ${mine?.choice===o?'p':''}" data-vote="${pl.id}" data-ch="${esc(o)}">${esc(o)}</button>`).join('')}</div>${mine?`<p class="mut">Ψήφισες «${esc(mine.choice)}». Μπορείς να αλλάξεις όσο είναι ανοιχτή.</p>`:''}`:''}${pollResults(pl,V,false)}</div>`}).join('')}
@@ -662,8 +693,13 @@ function bind(){
  if($('#xf')&&p){const hint=()=>{const[t,k,y]=CATS[$('#xc').value];$('#xhint').textContent=`«${t}»: κατανομή με ${KEYS[$('#xk').value||k]}, βαρύνει ${PAYER[$('#xp').value||y].toLowerCase()}.`};['#xc','#xk','#xp'].forEach(s=>$(s).onchange=hint);hint();
   $('#xf').onsubmit=e=>{e.preventDefault();const cat=$('#xc').value,a=toC($('#xa').value);if(a<=0){toast('Βάλε ποσό');return}p.expenses.push({id:uid(),cat,desc:$('#xd').value.trim()||CATS[cat][0],amount:a,key:$('#xk').value||CATS[cat][1],payer:$('#xp').value||CATS[cat][2],vendor:$('#xv').value});save()};
   $$('[data-delx]').forEach(b=>b.onclick=()=>{p.expenses=p.expenses.filter(e=>e.id!==b.dataset.delx);save()});
-  ['#gd','#ga','#gv'].forEach(s=>$(s).onchange=()=>{p.gas={desc:$('#gd').value,amount:toC($('#ga').value),vendor:$('#gv').value};save()});
-  $$('[data-rd]').forEach(i=>i.onchange=()=>{const[m,k]=i.dataset.rd.split('|');p.readings[m]=p.readings[m]||{s:'',e:''};p.readings[m][k]=i.value.replace(',','.');save()});
+  ['#gd','#ga','#gv'].forEach(s=>$(s).onchange=()=>{p.gas={...(p.gas||{}),desc:$('#gd').value,amount:toC($('#ga').value),vendor:$('#gv').value};save()});
+  $$('[data-rd]').forEach(i=>i.onchange=()=>{const[m,k]=i.dataset.rd.split('|');p.readings[m]=p.readings[m]||{s:'',e:''};p.readings[m][k]=i.value.replace(',','.');p.rs=p.re='';save()});
+  const autoSnaps=()=>{const prev=issued().filter(x=>!x.hist).at(-1);const a=(prev?.re&&mlog().find(x=>x.id===prev.re))||closestSnap(p.gas?.from),b=closestSnap(p.gas?.to);if(a&&b&&a.id!==b.id){p.rs=a.id;p.re=b.id;applySnaps(p)}};
+  ['gfrom','gto'].forEach(id=>{if($('#'+id))$('#'+id).onchange=()=>{p.gas=p.gas||{};p.gas[id==='gfrom'?'from':'to']=$('#'+id).value;if(mlog().length>=2)autoSnaps();save()}});
+  if($('#mrs'))$('#mrs').onchange=()=>{p.rs=$('#mrs').value;applySnaps(p);save()};
+  if($('#mre'))$('#mre').onchange=()=>{p.re=$('#mre').value;applySnaps(p);save()};
+  if($('#gomet'))$('#gomet').onclick=e=>{e.preventDefault();sub='meters';render()};
   $('#delp').onclick=()=>{if(confirm('Διαγραφή του μήνα;')){S.periods=S.periods.filter(x=>x!==p);save()}};
   $('#issue').onclick=()=>{if(!confirm('Έκδοση κοινοχρήστων '+plabel(p.id)+'; Ο μήνας θα κλειδώσει.'))return;const c=calc(p),prev={};S.units.forEach(u=>prev[u.id]=ledger(u.id).balance);
    p.result={res:c.res,exp:c.exp,all:c.all,byExp:c.byExp,prev,units:JSON.parse(JSON.stringify(S.units))};p.status='issued';p.issuedAt=today();p.emailed={};sel=p.id;sub='issued';save();toast('Εκδόθηκαν. Στείλε email ή εκτύπωσε.')}}
@@ -701,6 +737,14 @@ function bind(){
     an.emailed=n;save();toast(`Δημοσιεύτηκε και στάλθηκε σε ${n} διαμερίσματα`)}else{save();toast('Δημοσιεύτηκε')}};
   $$('[data-dela]').forEach(b=>b.onclick=()=>{if(confirm('Διαγραφή ανακοίνωσης;')){S.ann=S.ann.filter(x=>x.id!==b.dataset.dela);save()}})}
  if($('#ganew'))$('#ganew').onclick=()=>{S.ga=S.ga||[];const g={id:uid(),date:today(),type:'taktiki',quorumPct:75,att:{},proxy:{},items:[{id:uid(),title:'Έγκριση απολογισμού διαχείρισης',text:'',maj:'pres',votes:{}},{id:uid(),title:'Έγκριση προϋπολογισμού',text:'',maj:'pres',votes:{}},{id:uid(),title:'Εκλογή διαχειριστή',text:'',maj:'pres',votes:{}}]};S.ga.push(g);editId=g.id;save()};
+ if($('#msave')){const lv=lastVals();const upd=()=>{let n=0;$$('[data-mn]').forEach(i=>{const v=i.value.trim(),l=lv[i.dataset.mn],h=$(`[data-mh="${i.dataset.mn}"]`);if(v){n++;i.classList.add('chg');const d=num(v.replace(',','.'))-(l?.val||0);h.innerHTML=`<span class="${d<0?'bad':'hchg'}">${fnum(d)}</span>`}else{i.classList.remove('chg');h.textContent='—'}});$('#mcount').textContent=n?n+' μετρητές άλλαξαν':''};
+  $$('[data-mn]').forEach(i=>i.oninput=upd);$('#mdt').onchange=e=>mdate=e.target.value;
+  $('#msave').onclick=()=>{const vals={};let bad='';$$('[data-mn]').forEach(i=>{const v=i.value.trim();if(!v)return;const x=num(v.replace(',','.')),l=lv[i.dataset.mn];if(l&&x<l.val)bad=allMeters().find(m=>m.id===i.dataset.mn).label;vals[i.dataset.mn]=x});
+   if(bad&&!confirm('Ο μετρητής '+bad+' έχει μικρότερη ένδειξη από την προηγούμενη. Να καταχωριστεί;'))return;
+   const date=$('#mdt').value||today();const first=!(S.meterLog||[]).length;if(first)for(const m of allMeters())if(vals[m.id]==null&&lv[m.id])vals[m.id]=lv[m.id].val;
+   if(!Object.keys(vals).length){toast('Δεν άλλαξε κανένας μετρητής');return}
+   S.meterLog=S.meterLog||[];S.meterLog.push({id:uid(),date,t:Date.now(),official:$('#moff').checked,vals});mdate='';save();toast('Καταχωρίστηκε η καταμέτρηση '+fdate(date))}}
+ $$('[data-mdel]').forEach(b=>b.onclick=()=>{if(!confirm('Διαγραφή αυτής της καταμέτρησης;'))return;S.meterLog=S.meterLog.filter(x=>x.id!==b.dataset.mdel);save()});
  $$('[data-godocs]').forEach(b=>b.onclick=()=>{page='comm';csub='docs';editId=null;render()});
  $$('[data-gaed]').forEach(b=>b.onclick=()=>{editId=b.dataset.gaed;render()});
  if($('#galogq'))$('#galogq').oninput=e=>{gaQ=e.target.value;$('#galogt').innerHTML=gaLogHTML(gaLog(),gaQ)};
