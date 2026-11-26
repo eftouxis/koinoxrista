@@ -83,7 +83,7 @@ pre{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10
 <div id="print"></div>
 <script>
 /* ====== ΡΥΘΜΙΣΗ: μετά τη δημιουργία του Supabase βάλε εδώ URL και anon key ====== */
-const APP_VER='26/11 κ';
+const APP_VER='26/11 λ';
 const CONFIG={supabaseUrl:'https://csjcqxulwspmmwfgenig.supabase.co',supabaseKey:'sb_publishable_rbfYAfgoF1HHNUFwH9VcNw_oDbrAOkN',loginDomain:'polykatoikia.app'};
 </script>
 <script>
@@ -329,7 +329,7 @@ function vSettings(){const st=S.settings;
  <div class="row" style="margin-top:12px"><label>Δοκιμαστικό email προς<input id="testto" type="email" placeholder="το δικό σου email"></label><button class="fx" id="testmail">Αποστολή δοκιμής</button></div><p class="mut">Αν δεν έρθει σε 2 λεπτά (κοίτα και στα ανεπιθύμητα), άνοιξε στο Apps Script το «Εκτελέσεις» (Executions) για να δεις το σφάλμα.</p></div>
  <div class="card"><h2>Αποστολή email από το Gmail σου</h2><p class="mut">Φτιάξε ένα Google Apps Script με τον κώδικα, κάν' το ανάπτυξη ως εφαρμογή ιστού και βάλε πάνω το URL και το ίδιο μυστικό κλειδί.</p><pre>${esc(APPS_SCRIPT)}</pre><button class="sm" id="copyas">Αντιγραφή</button></div>
  <div class="card"><h2>Προηγούμενες εκδόσεις δεδομένων</h2><p class="mut">Αυτόματα, το πολύ μία ανά 10 λεπτά (τελευταίες 200). Αν κάτι χαλάσει, επανέφερε μια παλαιότερη.</p><div id="vers"><button class="sm" id="loadvers">Εμφάνιση εκδόσεων</button></div></div>
- <div class="card"><h2>Αντίγραφο ασφαλείας</h2><div id="impres" class="card" style="display:none;background:var(--pri2)"></div><div class="row"><button class="fx" id="exp">Εξαγωγή δεδομένων (.json)</button><label class="fx">Επαναφορά ή εισαγωγή ιστορικού<input type="file" id="imp" accept=".json"></label>${B.demo?'<button class="d fx" id="reset">Μηδενισμός δοκιμαστικών</button>':''}</div><textarea id="expout" rows="3" style="display:none;margin-top:8px"></textarea></div>`}
+ <div class="card"><h2>Αντίγραφο ασφαλείας</h2><div id="impres" class="card" style="display:none;background:var(--pri2)"></div><div class="row"><button class="p fx xlsxbtn">Αντίγραφο Excel (.xlsx)</button><button class="fx" id="exp">Εξαγωγή δεδομένων (.json)</button><label class="fx">Επαναφορά ή εισαγωγή ιστορικού<input type="file" id="imp" accept=".json"></label>${B.demo?'<button class="d fx" id="reset">Μηδενισμός δοκιμαστικών</button>':''}</div><textarea id="expout" rows="3" style="display:none;margin-top:8px"></textarea></div>`}
 const catOpts=k=>Object.entries(CATS).map(([v,[t]])=>`<option value="${v}" ${v===k?'selected':''}>${esc(t)}</option>`).join('');
 const venOpts=k=>'<option value="">—</option>'+S.vendors.filter(v=>v.id===k||!(v.ended&&v.ended<=today())).map(v=>`<option value="${v.id}" ${v.id===k?'selected':''}>${esc(v.name)}</option>`).join('');
 
@@ -400,7 +400,7 @@ function vByUnit(){const p=srcPeriod();if(!p)return'<div class="card mut">Δεν
  ${S.units.map(u=>{const r=c.res[u.id];return`<tr><td>${esc(u.label)}</td><td>${esc(u.owner)}</td><td class="n">${eur(r.ten)}</td><td class="n">${eur(r.own)}</td><td class="n"><b>${eur(r.tot)}</b></td></tr>`}).join('')}<tr><td colspan=4><b>Σύνολο</b></td><td class="n"><b>${eur(c.all)}</b></td></tr></table></div></div>`}
 function vIssued(){const iss=issued().reverse();if(!iss.length)return'<div class="card mut">Δεν έχουν εκδοθεί κοινόχρηστα ακόμα.</div>';
  if(!sel||!per(sel)||per(sel).status!=='issued')sel=iss[0].id;const p=per(sel),noMail=S.units.filter(u=>!recips(u).length),last=iss[0];
- return`<div class="card"><div class="row"><label style="flex:0 1 240px">Μήνας<select id="psel">${iss.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(plabel(x.id))}${x.hist?' (Polygon)':''}</option>`).join('')}</select></label>
+ return`<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="flex:1;min-width:200px">Μετά από κάθε έκδοση, κράτα και ένα αντίγραφο σε Excel με υπόλοιπα, καρτέλες και πληρωμές.</span><button class="fx xlsxbtn">Αντίγραφο Excel</button></div><div class="card"><div class="row"><label style="flex:0 1 240px">Μήνας<select id="psel">${iss.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(plabel(x.id))}${x.hist?' (Polygon)':''}</option>`).join('')}</select></label>
  <button class="p fx" id="mailall">Αποστολή email σε όλους</button><button class="p fx" id="printpack">Εκτύπωση μήνα: γενικό + όσοι δεν έχουν email</button><button class="fx" id="printno">Εκτύπωση όσων δεν έχουν email (${noMail.length})</button><button class="fx" id="printall">Εκτύπωση όλων</button><button class="fx" id="printsum">Πίνακας ποσών</button>
  ${p===last&&!draft()?'<button class="fx d" id="unissue">Ακύρωση έκδοσης</button>':''}</div></div>
  <div class="card"><div class="scroll"><table><tr><th>Διαμ.</th><th>Όνομα</th><th class="n">Πληρωτέο</th><th>Email</th><th></th></tr>
@@ -426,8 +426,61 @@ function vBpay(){const E=expList(),open=E.filter(e=>e.rest>0);
  <div class="card"><h2>Απλήρωτες δαπάνες</h2><div class="scroll"><table><tr><th>Μήνας</th><th>Δαπάνη</th><th>Συνεργασία</th><th class="n">Ποσό</th><th class="n">Υπολείπεται</th></tr>${open.map(e=>`<tr><td>${pshort(e.pid)}</td><td>${esc(e.desc)}</td><td>${esc(venName(e.vendor))}</td><td class="n">${eur(e.amount)}</td><td class="n bad">${eur(e.rest)}</td></tr>`).join('')||'<tr><td colspan=5 class="mut">Όλες εξοφλημένες</td></tr>'}</table></div></div>`}
 
 
+/* ---------------- αντίγραφο Excel (χωρίς εξωτερική βιβλιοθήκη) ---------------- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=t[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0}})();
+function zipStore(files){const enc=new TextEncoder(),parts=[],cd=[];let off=0;
+ for(const[name,txt]of files){const n=enc.encode(name),d=enc.encode(txt),crc=CRC(d),h=new DataView(new ArrayBuffer(30));
+  h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint32(14,crc,true);h.setUint32(18,d.length,true);h.setUint32(22,d.length,true);h.setUint16(26,n.length,true);
+  parts.push(new Uint8Array(h.buffer),n,d);const c=new DataView(new ArrayBuffer(46));c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint32(16,crc,true);c.setUint32(20,d.length,true);c.setUint32(24,d.length,true);c.setUint16(28,n.length,true);c.setUint32(42,off,true);
+  cd.push(new Uint8Array(c.buffer),n);off+=30+n.length+d.length}
+ const cdl=cd.reduce((a,x)=>a+x.length,0),e=new DataView(new ArrayBuffer(22));e.setUint32(0,0x06054b50,true);e.setUint16(8,files.length,true);e.setUint16(10,files.length,true);e.setUint32(12,cdl,true);e.setUint32(16,off,true);
+ return new Blob([...parts,...cd,new Uint8Array(e.buffer)],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'})}
+function xlsx(sheets){const X=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/[\x00-\x08\x0b\x0c\x0e-\x1f]/g,'');
+ const col=i=>{let s='';i++;while(i){const m=(i-1)%26;s=String.fromCharCode(65+m)+s;i=Math.floor((i-1)/26)}return s};
+ const ws=sh=>{const rows=sh.rows.map((r,ri)=>`<row r="${ri+1}">${r.map((c,ci)=>{if(c==null||c==='')return'';const o=typeof c==='object'?c:{v:c};const st=o.s!=null?o.s:(ri===0&&sh.head!==false?1:0);const ref=col(ci)+(ri+1);
+   return typeof o.v==='number'?`<c r="${ref}" s="${st}"><v>${o.v}</v></c>`:`<c r="${ref}" s="${st}" t="inlineStr"><is><t xml:space="preserve">${X(o.v)}</t></is></c>`}).join('')}</row>`).join('');
+  const w=sh.cols||sh.rows[0].map(()=>16);
+  return`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0">${sh.head!==false?'<pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/>':''}</sheetView></sheetViews><cols>${w.map((x,i)=>`<col min="${i+1}" max="${i+1}" width="${x}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData></worksheet>`};
+ const files=[['[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`],
+  ['_rels/.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+  ['xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${X(s.name.slice(0,31))}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets></workbook>`],
+  ['xl/_rels/workbook.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+  ['xl/styles.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><numFmts count="1"><numFmt numFmtId="164" formatCode="#,##0.00\\ &quot;€&quot;"/></numFmts><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFE7EEF8"/></patternFill></fill></fills><borders count="1"><border/></borders><cellStyleXfs count="1"><xf/></cellStyleXfs><cellXfs count="5"><xf/><xf fontId="1" fillId="2" applyFont="1" applyFill="1"/><xf numFmtId="164" applyNumberFormat="1"/><xf fontId="1" applyFont="1"/><xf numFmtId="164" fontId="1" applyNumberFormat="1" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`]];
+ sheets.forEach((s,i)=>files.push([`xl/worksheets/sheet${i+1}.xml`,ws(s)]));return zipStore(files)}
+function backupXlsx(){const st=S.settings,M=c=>({v:Math.round(c)/100,s:2}),MB=c=>({v:Math.round(c)/100,s:4}),B=v=>({v,s:3}),iss=issued(),real=iss.filter(p=>!p.hist),f=finance();
+ const pd=p=>p.issuedAt||p.id+'-28',ul=id=>unitOf(id)?.label||id,vn=id=>S.vendors.find(v=>v.id===id)?.name||'',catL=c=>(CATS[c]||[c])[0];
+ const info={name:'Στοιχεία',head:false,cols:[34,22],rows:[[B(st.name||'Πολυκατοικία')],[st.address||''],['Αντίγραφο της',fdate(today())],[],[B('Ταμείο')],['Τράπεζα',M(f.bank)],['Μετρητά',M(f.cashm)],['Σύνολο διαθέσιμο',MB(f.avail)],['Αποθεματικό',M(f.reserve)],['Οφειλές διαμερισμάτων',M(f.owed)],['Απλήρωτες δαπάνες σε συνεργασίες',M(f.unpaid)],[],[B('Λογαριασμός')],['Τράπεζα',st.bank||''],['IBAN',st.iban||''],['Διαχειριστής',st.manager||''],[],['Θετικό υπόλοιπο = οφειλή, αρνητικό = πίστωση.']]};
+ const bal={name:'Υπόλοιπα',cols:[8,26,22,30,14,14,14,16,14],rows:[['Διαμ.','Ιδιοκτήτης','Ένοικος','Email','Αρχικό υπόλοιπο','Χρεώσεις','Πληρωμές','Υπόλοιπο','Κατάσταση']]};let T=[0,0,0,0];
+ for(const u of S.units){const L=ledger(u.id),op=u.opening||0,ch=L.charged-(op>0?op:0);bal.rows.push([u.label,u.owner||'',u.tenant||'',recips(u).join(', '),M(op),M(ch),M(L.paid-(op<0?-op:0)),MB(L.balance),L.balance>0?'Οφείλει':L.balance<0?'Πίστωση':'Εξοφλημένο']);T[0]+=op;T[1]+=ch;T[2]+=L.paid-(op<0?-op:0);T[3]+=L.balance}
+ bal.rows.push([B('Σύνολο'),'','','',MB(T[0]),MB(T[1]),MB(T[2]),MB(T[3])]);
+ const card={name:'Καρτέλες',cols:[8,12,40,13,13,14],rows:[['Διαμ.','Ημερομηνία','Κίνηση','Χρέωση','Πίστωση','Υπόλοιπο']]};
+ for(const u of S.units){const ev=[];const op=u.opening||0;if(op)ev.push({d:'',t:'Αρχικό υπόλοιπο',c:op>0?op:0,p:op<0?-op:0});
+  for(const p of real)ev.push({d:pd(p),t:'Κοινόχρηστα '+plabel(p.id),c:p.result.res[u.id].tot,p:0});
+  for(const x of S.payments.filter(x=>x.unit===u.id))ev.push({d:x.date,t:'Πληρωμή'+(x.method?' ('+x.method+')':'')+(x.note?' – '+x.note:''),c:0,p:x.amount});
+  ev.sort((a,b)=>(a.d||'').localeCompare(b.d||''));let r=0;for(const e of ev){r+=e.c-e.p;card.rows.push([u.label,e.d?fdate(e.d):'',e.t,e.c?M(e.c):'',e.p?M(e.p):'',MB(r)])}card.rows.push([])}
+ const mon={name:'Ανά μήνα',cols:[18,10,...S.units.map(()=>10),12],rows:[['Μήνας','Πηγή',...S.units.map(u=>u.label),'Σύνολο']]};
+ for(const p of iss)mon.rows.push([plabel(p.id),p.hist?'Polygon':'Εφαρμογή',...S.units.map(u=>M(p.result.res[u.id]?.tot||0)),MB(p.result.exp||0)]);
+ const pay={name:'Πληρωμές ενοίκων',cols:[12,8,13,14,40],rows:[['Ημερομηνία','Διαμ.','Ποσό','Τρόπος','Σημείωση']]};
+ for(const x of [...S.payments].sort((a,b)=>b.date.localeCompare(a.date)))pay.rows.push([fdate(x.date),ul(x.unit),M(x.amount),x.method||'',x.note||'']);
+ const exps={name:'Δαπάνες',cols:[16,12,28,40,24,13,18,12],rows:[['Μήνας','Κατάσταση','Κατηγορία','Περιγραφή','Συνεργασία','Ποσό','Κατανομή','Βαρύνει']]};
+ for(const p of [...S.periods].sort((a,b)=>b.id.localeCompare(a.id))){const stt=p.hist?'Polygon':p.status==='draft'?'Σε εξέλιξη':'Εκδόθηκε';
+  if(p.gas?.amount)exps.rows.push([plabel(p.id),stt,'Θέρμανση (φυσικό αέριο)',p.gas.desc||'',vn(p.gas.vendor),M(p.gas.amount),'Πάγιο + μετρητές','Ένοικος']);
+  for(const e of p.expenses||[])exps.rows.push([plabel(p.id),stt,catL(e.cat),e.desc||'',vn(e.vendor),M(e.amount),KEYS[e.key]||e.key||'',e.payer==='idioktitis'?'Ιδιοκτήτης':'Ένοικος'])}
+ const EL=expList(),ed=r=>{const e=EL.find(x=>x.ref===r);return e?plabel(e.pid)+' – '+e.desc:''};
+ const bp={name:'Πληρωμές κτιρίου',cols:[12,40,24,13,14,14,30],rows:[['Ημερομηνία','Δαπάνη','Συνεργασία','Ποσό','Τρόπος','Από αποθεματικό','Σημείωση']]};
+ for(const x of [...S.bpay].sort((a,b)=>b.date.localeCompare(a.date)))bp.rows.push([fdate(x.date),ed(x.exp),vn(x.vendor),M(x.amount),x.method||'',x.fromRes?'Ναι':'',x.desc||'']);
+ const unp={name:'Απλήρωτες δαπάνες',cols:[16,40,24,13,13,13],rows:[['Μήνας','Δαπάνη','Συνεργασία','Ποσό','Πληρώθηκε','Υπόλοιπο']]};
+ for(const e of EL.filter(e=>e.rest>0))unp.rows.push([plabel(e.pid),e.desc,vn(e.vendor),M(e.amount),M(e.paid),MB(e.rest)]);
+ const ms=allMeters(),ml=mlog();const met={name:'Μετρητές',cols:[12,...ms.map(()=>10)],rows:[['Ημερομηνία',...ms.map(m=>m.label)]]};const acc={};
+ for(const x of ml){for(const k in x.vals)acc[k]=x.vals[k];met.rows.push([fdate(x.date),...ms.map(m=>acc[m.id]!=null?{v:acc[m.id],s:x.vals[m.id]!=null?3:0}:'')])}
+ const un={name:'Διαμερίσματα',cols:[8,8,26,22,10,10,26],rows:[['Διαμ.','Όροφος','Ιδιοκτήτης','Ένοικος','Χιλ. κοιν.','Χιλ. ανελκ.','Μετρητές (χιλ. θέρμανσης)']]};
+ for(const u of S.units)un.rows.push([u.label,u.floor||'',u.owner||'',u.tenant||'',{v:num(u.xe)},{v:num(u.xa)},u.meters.map(m=>m.label+': '+m.xt).join(', ')]);
+ return xlsx([info,bal,card,mon,pay,exps,bp,unp,met,un])}
+function downloadXlsx(){try{const b=backupXlsx(),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='koinoxrista-'+today()+'.xlsx';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},2000)}catch(e){toast('Σφάλμα: '+e.message)}}
+
 /* ---------------- τι νέο ---------------- */
 const CHANGELOG=[
+ ['26/11 λ',['Αντίγραφο Excel: υπόλοιπα, καρτέλες διαμερισμάτων, πληρωμές, δαπάνες, πληρωμές κτιρίου, απλήρωτα, μετρητές (Ρυθμίσεις και Εκδοθέντα)']],
  ['26/11 κ',['Το «Συνεργεία» έγινε «Συνεργασίες», με ημερομηνία λήξης: οι παλιές συνεργασίες φαίνονται αχνές στο τέλος και δεν εμφανίζονται στις νέες δαπάνες','Με νέα συνεργασία ίδιας ειδικότητας, η παλιά μπαίνει ως ληγμένη και τα πάγια περνούν στη νέα','Οι Μετρητές μπήκαν στο αριστερό μενού','Η ημερομηνία καταμέτρησης μπαίνει αυτόματα (σήμερα) και αλλάζει μόνο αν χρειαστεί· δύο καταχωρίσεις την ίδια μέρα ενώνονται','Εκτίμηση ενδείξεων στις ημερομηνίες του λογαριασμού, για όταν η ΔΕΔΑ μετράει σε άλλη μέρα','«Μονάδες» αντί για «ώρες»','Στους κωδικούς σύνδεσης έμεινε μόνο η αυτόματη δημιουργία με χαρτάκια','Αυτή η σελίδα «Τι νέο»']],
  ['26/11 ι',['Καταμετρήσεις μετρητών με ημερομηνία: γράφεις μόνο όσους άλλαξαν, με ιστορικό','Σύνδεση με τις ημερομηνίες του λογαριασμού αερίου και προειδοποίηση απόκλισης']],
  ['26/11 θ',['Γενικές συνελεύσεις κατά τον κανονισμό: απαρτία 75%, πλειοψηφία μισό + 1 των παρόντων']],
@@ -770,6 +823,7 @@ function bind(){
    if(!Object.keys(vals).length){toast('Δεν άλλαξε κανένας μετρητής');return}
    S.meterLog=S.meterLog||[];const same=S.meterLog.find(x=>x.date===date);if(same)Object.assign(same.vals,vals);else S.meterLog.push({id:uid(),date,t:Date.now(),vals});mdate='';save();toast('Καταχωρίστηκε η καταμέτρηση '+fdate(date))}}
  $$('[data-mdel]').forEach(b=>b.onclick=()=>{if(!confirm('Διαγραφή αυτής της καταμέτρησης;'))return;S.meterLog=S.meterLog.filter(x=>x.id!==b.dataset.mdel);save()});
+ $$('.xlsxbtn').forEach(b=>b.onclick=downloadXlsx);
  if($('#chlog'))$('#chlog').onclick=e=>{e.preventDefault();page='changelog';editId=null;render()};
  $$('[data-godocs]').forEach(b=>b.onclick=()=>{page='comm';csub='docs';editId=null;render()});
  $$('[data-gaed]').forEach(b=>b.onclick=()=>{editId=b.dataset.gaed;render()});
