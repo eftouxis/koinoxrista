@@ -84,7 +84,7 @@ pre{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10
 <div id="print"></div>
 <script>
 /* ====== ΡΥΘΜΙΣΗ: μετά τη δημιουργία του Supabase βάλε εδώ URL και anon key ====== */
-const APP_VER='27/11';
+const APP_VER='27/11 β';
 const CONFIG={supabaseUrl:'https://csjcqxulwspmmwfgenig.supabase.co',supabaseKey:'sb_publishable_rbfYAfgoF1HHNUFwH9VcNw_oDbrAOkN',loginDomain:'polykatoikia.app'};
 </script>
 <script>
@@ -92,11 +92,20 @@ const CONFIG={supabaseUrl:'https://csjcqxulwspmmwfgenig.supabase.co',supabaseKey
 /* ---------------- βασικά ---------------- */
 const KEYS={koina:'Χιλ. κοινοχρήστων',asanser:'Χιλ. ανελκυστήρα',therm:'Χιλ. θέρμανσης',isa:'Ισόποσα'};
 const PAYER={enoikos:'Ένοικος',idioktitis:'Ιδιοκτήτης'};
-const CATS={kathar:['Καθαρισμός','koina','enoikos'],kipos:['Κηπουρός','koina','enoikos'],dei:['ΔΕΗ κοινοχρήστων','koina','enoikos'],eydap:['ΕΥΔΑΠ','koina','enoikos'],
- mikro:['Μικροέξοδα (λάμπες, αναλώσιμα)','koina','enoikos'],asanser:['Ασανσέρ – συντήρηση','asanser','enoikos'],asanser_ep:['Ασανσέρ – βλάβη / ανταλλακτικό','asanser','enoikos'],
- asanser_ergo:['Ασανσέρ – αντικατάσταση / εκσυγχρονισμός','asanser','idioktitis'],therm_syn:['Θέρμανση – συντήρηση / καμινάδα','therm','enoikos'],therm_fixed:['Θέρμανση – πάγια τέλη αερίου (λογαριασμός χωρίς κατανάλωση)','therm','enoikos'],
- therm_ergo:['Θέρμανση – εγκατάσταση / εξοπλισμός','therm','idioktitis'],ergo:['Επισκευή / βελτίωση κτιρίου','koina','idioktitis'],
- asfaleia:['Ασφάλεια κτιρίου / πυροσβεστήρες','koina','idioktitis'],apothem:['Αποθεματικό','koina','idioktitis'],diax:['Αμοιβή διαχείρισης','koina','idioktitis'],trapeza:['Έξοδα τράπεζας','isa','enoikos'],isa:['Ισόποσο (απόφαση συνέλευσης)','isa','enoikos'],allo:['Άλλο','koina','enoikos']};
+const CATS={kathar:['Καθαρισμός','koina','enoikos'],kipos:['Κηπουρός','koina','enoikos'],dei:['ΔΕΗ κοινοχρήστων (ρεύμα)','koina','enoikos'],eydap:['ΕΥΔΑΠ','koina','enoikos'],
+ mikro:['Μικροέξοδα (λάμπες, μπαταρίες, αναλώσιμα, υλικά καθαριότητας)','koina','enoikos'],apolym:['Απολύμανση / απεντόμωση','koina','enoikos'],ydravl:['Υδραυλικός / απόφραξη','koina','enoikos'],
+ ilektr:['Ηλεκτρολόγος / φωτισμός / θυροτηλέφωνο','koina','enoikos'],pyrosv:['Πυροσβεστήρες – αναγόμωση / αγορά','koina','enoikos'],
+ garaz:['Γκαραζόπορτα – συντήρηση / μικροεπισκευή','koina','enoikos'],garaz_ergo:['Γκαραζόπορτα – μεγάλη επισκευή / μοτέρ / αντικατάσταση','koina','idioktitis'],
+ asanser:['Ασανσέρ – συντήρηση','asanser','enoikos'],asanser_cert:['Ασανσέρ – πιστοποίηση (περιοδικός έλεγχος)','asanser','enoikos'],asanser_ep:['Ασανσέρ – βλάβη / μικρό ανταλλακτικό','asanser','enoikos'],
+ asanser_ergo:['Ασανσέρ – μεγάλη επισκευή / τεχνικός φάκελος / εκσυγχρονισμός','asanser','idioktitis'],
+ therm_syn:['Θέρμανση – συντήρηση καυστήρα / καμινάδα / έλεγχος στεγανότητας','therm','enoikos'],therm_fixed:['Θέρμανση – πάγια τέλη αερίου (λογαριασμός χωρίς κατανάλωση)','therm','enoikos'],
+ therm_ergo:['Θέρμανση – εγκατάσταση / εξοπλισμός','therm','idioktitis'],ergo:['Επισκευή / βελτίωση κτιρίου (ταράτσα, πρόσοψη, σωληνώσεις)','koina','idioktitis'],
+ asfaleia:['Ασφάλεια κτιρίου','koina','idioktitis'],apothem:['Αποθεματικό','koina','idioktitis'],diax:['Αμοιβή διαχείρισης','koina','idioktitis'],trapeza:['Έξοδα τράπεζας','isa','enoikos'],isa:['Ισόποσο (απόφαση συνέλευσης)','isa','enoikos'],allo:['Άλλο','koina','enoikos']};
+const CATRX=[[/γκαρα?ζ|γακαρζ|ρολ[οά] γκαρ/i,'garaz'],[/απολυμ|απεντομ|μυοκτον/i,'apolym'],[/απο?φρα[ξχ]|υδραυλ|αποχετ/i,'ydravl'],[/ηλεκτρολ|θυροτηλ|κουδο[υύ]ν|διακ[οό]πτ/i,'ilektr'],[/πυροσβ/i,'pyrosv'],
+ [/πιστοποι.*ανελκ|πιστοποι.*ασανσ|ελε[γχ]+ος πιστοπ/i,'asanser_cert'],[/τεχνικ[οό]ς φ[αά]κελ|εργασ.*επισκευ.*ασανσ|επισκευ.*ασανσ/i,'asanser_ergo'],[/^συντ[ηή]ρηση$|συντ[ηή]ρηση ασανσ|συντ[ηή]ρηση ανελκ/i,'asanser'],
+ [/καυστ|καμιν|στεγανοπ|στεγαν[οό]τ/i,'therm_syn'],[/φυσικ.?.?α[εέ]ρ|φ\.?α\.? ?παγ/i,'therm_fixed'],[/λ[αά]μπ|μπαταρ|αναλωσ|σφουγγαρ|σκο[υύ]π/i,'mikro'],
+ [/^δεη$|ρε[υύ]μα/i,'dei'],[/ευδαπ|νερ[οό]/i,'eydap'],[/καθαρισ/i,'kathar'],[/κηπ/i,'kipos'],[/διαχε[ιί]ρ/i,'diax'],[/τρ[αά]πεζ/i,'trapeza'],[/ασφ[αά]λ/i,'asfaleia']];
+const guessCat=d=>{for(const[r,c]of CATRX)if(r.test(d||''))return c;return''};
 const MONTHS=['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const eur=c=>(c/100).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
@@ -189,7 +198,7 @@ const SupaBackend={demo:false,sb:null,
 const B=CONFIG.supabaseUrl&&CONFIG.supabaseKey?SupaBackend:DemoBackend;
 
 /* ---------------- κατάσταση ---------------- */
-let live={req:[],votes:[],err:''},csub='ann',S=null,me=null,page='home',sub='draft',sel=null,editId=null,bsel=null,cbf='all',txf='',xedit=null,unitData=null,saveTimer=null,saving='';
+let live={req:[],votes:[],err:''},csub='ann',S=null,me=null,page='home',sub='draft',sel=null,editId=null,bsel=null,ivw='sheet',uvi=0,cbf='all',txf='',xedit=null,unitData=null,saveTimer=null,saving='';
 const unitOf=id=>S?.units.find(u=>u.id===id);
 const per=id=>S.periods.find(p=>p.id===id);
 const issued=()=>S.periods.filter(p=>p.status==='issued').sort((a,b)=>a.id.localeCompare(b.id));
@@ -412,7 +421,7 @@ function vDraft(){const p=draft();
   <details><summary class="mut">Χειροκίνητη διόρθωση ενδείξεων</summary><div class="scroll"><table><tr><th>Μετρητής</th><th>Αρχή</th><th>Τέλος</th></tr>
   ${S.units.flatMap(u=>u.meters.map(m=>{const r=p.readings[m.id]||{s:'',e:''};return`<tr><td>${esc(m.label)}</td><td><input inputmode="decimal" data-rd="${m.id}|s" value="${esc(r.s)}"></td><td><input inputmode="decimal" data-rd="${m.id}|e" value="${esc(r.e)}"></td></tr>`})).join('')}</table></div></details>`})()}</div>
  <div class="card"><p class="${ok?'ok':'bad'}" style="margin:0">${ok?'✓ Τα ποσά των διαμερισμάτων αθροίζουν ακριβώς στις δαπάνες':'✕ Διαφορά κατανομής: '+eur(c.exp-c.all)}</p><br><button class="d sm" id="delp">Διαγραφή μήνα</button></div>`}
-function histExp(){const m=new Map();for(const p of [...S.periods].sort((a,b)=>a.id.localeCompare(b.id)))for(const e of p.expenses||[]){if(!e.desc)continue;m.set(e.desc.trim(),{desc:e.desc.trim(),cat:e.cat,key:e.key,payer:e.payer,vendor:e.vendor,amount:e.amount,pid:p.id})}return[...m.values()].sort((a,b)=>a.desc.localeCompare(b.desc,'el'))}
+function histExp(){const m=new Map();for(const p of [...S.periods].sort((a,b)=>a.id.localeCompare(b.id)))for(const e of p.expenses||[]){if(!e.desc)continue;m.set(e.desc.trim(),{desc:e.desc.trim(),cat:(p.hist&&['mikro','allo','ergo','dei'].includes(e.cat)&&guessCat(e.desc))||e.cat,key:p.hist?'':e.key,payer:p.hist?'':e.payer,vendor:e.vendor,amount:e.amount,pid:p.id})}return[...m.values()].sort((a,b)=>a.desc.localeCompare(b.desc,'el'))}
 const allPer=()=>[...issued(),...(draft()?[draft()]:[])];
 function srcPeriod(){const L=allPer();return L.find(x=>x.id===bsel)||draft()||L.at(-1)}
 function mnav(cur,list,attr){const i=list.findIndex(x=>x.id===cur);return`<div class="mnav"><button class="fx" ${attr}="${list[i-1]?.id||''}" ${i>0?'':'disabled'} title="Προηγούμενος μήνας">‹</button><button class="fx" ${attr}="${list[i+1]?.id||''}" ${i<list.length-1&&i>=0?'':'disabled'} title="Επόμενος μήνας">›</button></div>`}
@@ -428,6 +437,7 @@ function vIssued(){const iss=issued().reverse();if(!iss.length)return'<div class
  return`<div class="card" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><span class="mut" style="flex:1;min-width:200px">Μετά από κάθε έκδοση, κράτα και ένα αντίγραφο σε Excel με υπόλοιπα, καρτέλες και πληρωμές.</span><button class="fx xlsxbtn">Αντίγραφο Excel</button></div><div class="card"><div class="row" style="align-items:flex-end">${mnav(sel,issued(),'data-pnav')}<label style="flex:0 1 240px">Μήνας<select id="psel">${iss.map(x=>`<option value="${x.id}" ${x.id===sel?'selected':''}>${esc(plabel(x.id))}${x.hist?' (Polygon)':''}</option>`).join('')}</select></label>
  <button class="p fx" id="mailall">Αποστολή email σε όλους</button><button class="fx" id="emprev">Προεπισκόπηση email</button><button class="p fx" id="printpack">Εκτύπωση μήνα: γενικό + όσοι δεν έχουν email</button><button class="fx" id="printno">Εκτύπωση όσων δεν έχουν email (${noMail.length})</button><button class="fx" id="printall">Εκτύπωση όλων</button><button class="fx" id="printsum">Πίνακας ποσών</button>
  ${p===last&&!draft()?'<button class="fx d" id="unissue">Ακύρωση έκδοσης</button>':''}</div></div>
+ <div class="card"><div class="row" style="align-items:flex-end"><h2 style="margin:0;flex:1">Προβολή ${esc(plabel(p.id))}</h2>${mnav(sel,issued(),'data-pnav')}<label style="flex:0 1 260px">Τι να δείξει<select id="ivw"><option value="sheet" ${ivw==='sheet'?'selected':''}>Γενικό φύλλο πολυκατοικίας</option>${S.units.map(u=>`<option value="${u.id}" ${ivw===u.id?'selected':''}>Ειδοποιητήριο ${esc(u.label)} – ${esc(u.owner)}</option>`).join('')}</select></label>${ivw!=='sheet'?mnav(ivw,S.units,'data-unav'):''}</div><br><div class="nprev" style="overflow-x:auto">${ivw==='sheet'?amountsTable(p):noticeHTML(p,ivw)}</div></div>
  <div class="card"><div class="scroll"><table><tr><th>Διαμ.</th><th>Όνομα</th><th class="n">Πληρωτέο</th><th>Email</th><th></th></tr>
  ${S.units.map(u=>{const r=p.result.res[u.id],pr=p.result.prev[u.id]||0,to=recips(u);return`<tr><td>${esc(u.label)}</td><td>${esc(u.owner)}</td><td class="n">${eur(Math.max(0,r.tot+pr))}</td><td>${to.length?(p.emailed?.[u.id]?`<span class="tag g">στάλθηκε ${fdate(p.emailed[u.id])}</span>`:'<span class="tag w">εκκρεμεί</span>'):'<span class="tag b">χωρίς email</span>'}</td>
  <td class="fx"><button class="sm" data-pn="${u.id}">Εκτύπωση</button> ${to.length?`<button class="sm" data-mail="${u.id}">Email</button>`:''} <button class="sm" data-show="${u.id}">Προβολή</button></td></tr>`}).join('')}</table></div></div><div id="nprev"></div>`}
@@ -520,6 +530,7 @@ function downloadXlsx(){try{const b=backupXlsx(),a=document.createElement('a');a
 
 /* ---------------- τι νέο ---------------- */
 const CHANGELOG=[
+ ['27/11 β',['Εκδοθέντα: προβολή γενικού φύλλου ή ειδοποιητηρίου κάθε διαμερίσματος με βελάκια για μήνα και διαμέρισμα','Οι ένοικοι βλέπουν τα ειδοποιητήριά τους με βελάκια ανά μήνα','Νέες κατηγορίες: γκαραζόπορτα, απολύμανση, υδραυλικός, ηλεκτρολόγος, πυροσβεστήρες, πιστοποίηση ανελκυστήρα κ.ά.','Η κατηγορία μπαίνει μόνη της από την περιγραφή (π.χ. «γκαραζόπορτα»)']],
  ['27/11',['Τα κουτάκια στα Γενικά πατιούνται και πάνε στις αντίστοιχες κινήσεις','Νέα σελίδα «Ταμείο»: κινήσεις τράπεζας, μετρητών και αποθεματικού με υπόλοιπο, και απλήρωτες δαπάνες με κουμπί «Πληρωμή»','Στοιχεία πολυκατοικίας και πάγια έξοδα μέσα στις Ρυθμίσεις','Κουμπί «+ Δαπάνη» πάνω δεξιά σε κάθε σελίδα','Δαπάνη: πρόταση από το ιστορικό (και της Polygon) με την ίδια κατηγορία, κατανομή και συνεργασία','Δαπάνη: «Πληρώθηκε;» με επιλογή «Την πλήρωσε το διαμέρισμα …» που πιστώνει αυτόματα','Επεξεργασία δαπάνης (✎)','Βελάκια ‹ › για γρήγορη αλλαγή μήνα','Υπόλοιπα διαμερισμάτων στις Συναλλαγές','Νέο, ευανάγνωστο email ειδοποιητηρίου (και στο κινητό), με κουμπί για την καρτέλα']],
  ['26/11 λ',['Αντίγραφο Excel: υπόλοιπα, καρτέλες διαμερισμάτων, πληρωμές, δαπάνες, πληρωμές κτιρίου, απλήρωτα, μετρητές (Ρυθμίσεις και Εκδοθέντα)']],
  ['26/11 κ',['Το «Συνεργεία» έγινε «Συνεργασίες», με ημερομηνία λήξης: οι παλιές συνεργασίες φαίνονται αχνές στο τέλος και δεν εμφανίζονται στις νέες δαπάνες','Με νέα συνεργασία ίδιας ειδικότητας, η παλιά μπαίνει ως ληγμένη και τα πάγια περνούν στη νέα','Οι Μετρητές μπήκαν στο αριστερό μενού','Η ημερομηνία καταμέτρησης μπαίνει αυτόματα (σήμερα) και αλλάζει μόνο αν χρειαστεί· δύο καταχωρίσεις την ίδια μέρα ενώνονται','Εκτίμηση ενδείξεων στις ημερομηνίες του λογαριασμού, για όταν η ΔΕΔΑ μετράει σε άλλη μέρα','«Μονάδες» αντί για «ώρες»','Στους κωδικούς σύνδεσης έμεινε μόνο η αυτόματη δημιουργία με χαρτάκια','Αυτή η σελίδα «Τι νέο»']],
@@ -674,8 +685,9 @@ function uHome(){const{card:c,pub}=unitData;if(!c)return'<div class="card mut">�
  <p class="mut" style="margin:8px 0 0">Το ποσό αλλάζει μέχρι να εκδοθούν τα κοινόχρηστα του μήνα.</p></div>`:''}
  ${pub.fin?`<div class="card"><h2>Ταμείο πολυκατοικίας</h2><div class="kpis" style="margin:0"><div class="kpi"><div><b>${eur(pub.fin.avail)}</b><span>Διαθέσιμα (τράπεζα + μετρητά)</span></div></div><div class="kpi"><div><b>${eur(pub.fin.reserve)}</b><span>Αποθεματικό</span></div></div><div class="kpi"><div><b>${eur(pub.fin.unpaid)}</b><span>Λογαριασμοί προς πληρωμή</span></div></div><div class="kpi"><div><b>${eur(pub.fin.owed)}</b><span>Οφειλές διαμερισμάτων (σύνολο)</span></div></div></div><p class="mut" style="margin:8px 0 0">Ενημέρωση ${fdate(pub.updated)}</p></div>`:''}
 ${(pub.ann||[]).slice(0,3).map(a=>`<div class="card"><b>${esc(a.title)}</b><div class="mut">${fdate(a.date)}</div><p style="white-space:pre-wrap;margin:8px 0 0">${esc(a.text)}</p></div>`).join('')}<div id="nprev"></div>`}
-function uBills(){const c=unitData.card;if(!c||!c.notices.length)return'<div class="card mut">Δεν έχουν εκδοθεί κοινόχρηστα.</div>';
- return c.notices.map((n,i)=>`<details class="card"><summary>${esc(plabel(n.pid))} · ${eur(n.tot)} <span class="st ${STATUS[n.status][0]}" style="float:right">${STATUS[n.status][1]}</span></summary><br><div class="scroll"><table>${n.lines.map(l=>`<tr><td>${esc(l.desc)}</td><td class="n">${eur(l.amount)}</td></tr>`).join('')}<tr><td><b>Σύνολο</b></td><td class="n"><b>${eur(n.tot)}</b></td></tr></table></div><br><button class="sm" data-upn="${i}">Εκτύπωση ειδοποιητηρίου</button> <button class="sm" data-ushow="${i}">Προβολή</button></details>`).join('')+'<div id="nprev"></div>'}
+function uBills(){const c=unitData.card;if(!c||!c.notices.length)return'<div class="card mut">Δεν έχουν εκδοθεί κοινόχρηστα.</div>';const N=c.notices;if(uvi>=N.length)uvi=0;const n=N[uvi];
+ const viewer=`<div class="card"><div class="row" style="align-items:flex-end"><div class="mnav"><button class="fx" data-uvi="${uvi+1<N.length?uvi+1:''}" ${uvi+1<N.length?'':'disabled'} title="Προηγούμενος μήνας">‹</button><button class="fx" data-uvi="${uvi>0?uvi-1:''}" ${uvi>0?'':'disabled'} title="Επόμενος μήνας">›</button></div><label style="flex:0 1 240px">Μήνας<select id="uvs">${N.map((x,i)=>`<option value="${i}" ${i===uvi?'selected':''}>${esc(plabel(x.pid))}</option>`).join('')}</select></label><span class="st ${STATUS[n.status][0]}">${STATUS[n.status][1]}</span><b class="fx" style="font-size:18px">${eur(n.tot)}</b><button class="sm fx" data-upn="${uvi}">Εκτύπωση</button></div><br><div class="nprev" style="overflow-x:auto">${n.html}</div></div>`;
+ return viewer+'<h3 class="mut" style="margin:18px 4px 8px">Όλοι οι μήνες</h3>'+N.map((n,i)=>`<details class="card"><summary>${esc(plabel(n.pid))} · ${eur(n.tot)} <span class="st ${STATUS[n.status][0]}" style="float:right">${STATUS[n.status][1]}</span></summary><br><div class="scroll"><table>${n.lines.map(l=>`<tr><td>${esc(l.desc)}</td><td class="n">${eur(l.amount)}</td></tr>`).join('')}<tr><td><b>Σύνολο</b></td><td class="n"><b>${eur(n.tot)}</b></td></tr></table></div><br><button class="sm" data-upn="${i}">Εκτύπωση ειδοποιητηρίου</button> <button class="sm" data-ushow="${i}">Προβολή</button></details>`).join('')+'<div id="nprev"></div>'}
 function uTx(){const c=unitData.card;return`<div class="card"><h2>Οι πληρωμές μου</h2><div class="scroll"><table><tr><th>Ημερομηνία</th><th>Τρόπος</th><th class="n">Ποσό</th></tr>${(c?.payments||[]).map(x=>`<tr><td>${fdate(x.date)}</td><td>${esc(x.method)}</td><td class="n">${eur(x.amount)}</td></tr>`).join('')||'<tr><td colspan=3 class="mut">Καμία πληρωμή</td></tr>'}</table></div></div>`}
 function uReports(){const pb=unitData.pub,m=pb.months||[];const top=(pb.draft?`<div class="card"><h2>${esc(plabel(pb.draft.pid))} · σε εξέλιξη</h2><div class="scroll"><table>${pb.draft.items.map(i=>`<tr><td>${esc(i.desc)}</td><td class="n">${eur(i.amount)}</td></tr>`).join('')||'<tr><td class="mut">Καμία ακόμα</td></tr>'}<tr><td><b>Σύνολο μέχρι τώρα</b></td><td class="n"><b>${eur(pb.draft.total)}</b></td></tr></table></div></div>`:'')+((pb.recurring||[]).length?`<div class="card"><h2>Πάγια μηνιαία έξοδα</h2><div class="scroll"><table>${pb.recurring.map(r=>`<tr><td>${esc(r.desc)}</td><td class="n">${eur(r.amount)}</td></tr>`).join('')}</table></div></div>`:'');return top+m.map(x=>`<details class="card"><summary>${esc(plabel(x.pid))} · σύνολο κτιρίου ${eur(x.total)}</summary><br><div class="scroll"><table>${x.items.map(i=>`<tr><td>${esc(i.desc)}</td><td class="n">${eur(i.amount)}</td></tr>`).join('')}</table></div></details>`).join('')||'<div class="card mut">Καμία δαπάνη ακόμα.</div>'}
 function uYear(){const c=unitData.card;if(!c)return'<div class="card mut">Δεν υπάρχουν στοιχεία.</div>';const ys=[...new Set([...c.notices.map(n=>n.pid.slice(0,4)),...c.payments.map(p=>p.date.slice(0,4))])].sort().reverse();
@@ -722,7 +734,7 @@ function bind(){
  $$('[data-page]').forEach(b=>b.onclick=()=>go(b.dataset.page));$$('[data-go]').forEach(b=>b.onclick=()=>go(b.dataset.go,'draft'));
  const lo=async()=>{await B.logout();me=null;S=null;unitData=null;render()};$('#logout').onclick=lo;if($('#logout2'))$('#logout2').onclick=lo;
  if(me.role!=='admin'){const N=unitData.card?.notices||[];if($('#urefresh'))$('#urefresh').onclick=async()=>{unitData=await B.loadUnit(me.unit);await loadLive();render();toast('Ενημερώθηκε')};
-  $$('[data-upn]').forEach(b=>b.onclick=()=>doPrint(N[+b.dataset.upn].html));$$('[data-ushow]').forEach(b=>b.onclick=()=>showPrev(N[+b.dataset.ushow].html));
+  $$('[data-upn]').forEach(b=>b.onclick=()=>doPrint(N[+b.dataset.upn].html));$$('[data-ushow]').forEach(b=>b.onclick=()=>showPrev(N[+b.dataset.ushow].html));$$('[data-uvi]').forEach(b=>b.onclick=()=>{if(b.dataset.uvi!==''){uvi=+b.dataset.uvi;render()}});if($('#uvs'))$('#uvs').onchange=e=>{uvi=+e.target.value;render()};
   const c=$('#copyref');if(c)c.onclick=()=>navigator.clipboard?.writeText(c.dataset.v).then(()=>toast('Αντιγράφηκε'),()=>toast(c.dataset.v));
   $$('[data-dopen]').forEach(a=>a.onclick=e=>{e.preventDefault();const d=(unitData.pub.docs||[]).find(x=>x.id===a.dataset.dopen);if(d)openDoc(d)});
   $$('[data-gashow]').forEach(b=>b.onclick=()=>showPrev(unitData.pub.ga.find(g=>g.id===b.dataset.gashow).html));$$('[data-gaprint]').forEach(b=>b.onclick=()=>doPrint(unitData.pub.ga.find(g=>g.id===b.dataset.gaprint).html));
@@ -811,6 +823,7 @@ function bind(){
  if($('#xf')&&p){const hint=()=>{const[t,k,y]=CATS[$('#xc').value];$('#xhint').textContent=`«${t}»: κατανομή με ${KEYS[$('#xk').value||k]}, βαρύνει ${PAYER[$('#xp').value||y].toLowerCase()}.`};['#xc','#xk','#xp'].forEach(s=>$(s).onchange=hint);hint();
   $('#xd').onchange=()=>{const h=histExp().find(x=>x.desc===$('#xd').value.trim());if(!h)return;if(CATS[h.cat])$('#xc').value=h.cat;if(h.vendor&&S.vendors.some(v=>v.id===h.vendor))$('#xv').value=h.vendor;
    $('#xk').value=h.key&&CATS[h.cat]?.[1]!==h.key?h.key:'';$('#xp').value=h.payer&&CATS[h.cat]?.[2]!==h.payer?h.payer:'';hint();$('#xhint').textContent+=` Τελευταία φορά: ${plabel(h.pid)}, ${eur(h.amount)}.`};
+  $('#xd').oninput=()=>{if(xedit)return;const g=guessCat($('#xd').value);if(g&&!histExp().some(x=>x.desc===$('#xd').value.trim())){$('#xc').value=g;hint()}};
   if($('#xcancel'))$('#xcancel').onclick=()=>{xedit=null;render()};
   $('#xf').onsubmit=e=>{e.preventDefault();const cat=$('#xc').value,a=toC($('#xa').value);if(a<=0){toast('Βάλε ποσό');return}
    const vals={cat,desc:$('#xd').value.trim()||CATS[cat][0],amount:a,key:$('#xk').value||CATS[cat][1],payer:$('#xp').value||CATS[cat][2],vendor:$('#xv').value};
@@ -879,6 +892,8 @@ function bind(){
  if($('#qadd'))$('#qadd').onclick=()=>{page='bills';sub='draft';xedit=null;render();setTimeout(()=>{const x=$('#xd');if(x){x.scrollIntoView({behavior:'smooth',block:'center'});x.focus()}else toast('Άνοιξε πρώτα τον μήνα')},60)};
  $$('[data-bnav]').forEach(b=>b.onclick=()=>{if(b.dataset.bnav){bsel=b.dataset.bnav;render()}});if($('#bsel'))$('#bsel').onchange=e=>{bsel=e.target.value;render()};
  $$('[data-pnav]').forEach(b=>b.onclick=()=>{if(b.dataset.pnav){sel=b.dataset.pnav;render()}});
+ if($('#ivw'))$('#ivw').onchange=e=>{ivw=e.target.value;render()};$$('[data-unav]').forEach(b=>b.onclick=()=>{if(b.dataset.unav){ivw=b.dataset.unav;render()}});
+ $$('[data-uvi]').forEach(b=>b.onclick=()=>{if(b.dataset.uvi!==''){uvi=+b.dataset.uvi;render()}});if($('#uvs'))$('#uvs').onchange=e=>{uvi=+e.target.value;render()};
  $$('[data-cbf]').forEach(b=>b.onclick=()=>{cbf=b.dataset.cbf;render()});
  $$('[data-payexp]').forEach(b=>b.onclick=()=>{const o=$('#be');o.value=b.dataset.payexp;o.dispatchEvent(new Event('change'));$('#bf').scrollIntoView({behavior:'smooth',block:'center'});$('#ba').focus()});
  $$('.xlsxbtn').forEach(b=>b.onclick=downloadXlsx);
