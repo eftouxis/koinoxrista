@@ -90,7 +90,7 @@ pre{background:#f8fafc;border:1px solid var(--line);border-radius:8px;padding:10
 <div id="print"></div>
 <script>
 /* ====== ΡΥΘΜΙΣΗ: μετά τη δημιουργία του Supabase βάλε εδώ URL και anon key ====== */
-const APP_VER='28/11 α';
+const APP_VER='28/11 β';
 const CONFIG={supabaseUrl:'https://csjcqxulwspmmwfgenig.supabase.co',supabaseKey:'sb_publishable_rbfYAfgoF1HHNUFwH9VcNw_oDbrAOkN',loginDomain:'polykatoikia.app'};
 </script>
 <script>
@@ -98,7 +98,7 @@ const CONFIG={supabaseUrl:'https://csjcqxulwspmmwfgenig.supabase.co',supabaseKey
 /* ---------------- βασικά ---------------- */
 const KEYS={koina:'Χιλ. κοινοχρήστων',asanser:'Χιλ. ανελκυστήρα',therm:'Χιλ. θέρμανσης',isa:'Ισόποσα'};
 const PAYER={enoikos:'Ένοικος',idioktitis:'Ιδιοκτήτης'};
-const CATS={kathar:['Καθαρισμός','koina','enoikos'],kipos:['Κηπουρός','koina','enoikos'],dei:['ΔΕΗ κοινοχρήστων (ρεύμα)','koina','enoikos'],eydap:['ΕΥΔΑΠ','koina','enoikos'],
+const CATS={kathar:['Καθαρισμός','koina','enoikos'],kipos:['Κηπουρός','koina','enoikos'],dei:['Ρεύμα κοινοχρήστων','koina','enoikos'],eydap:['ΕΥΔΑΠ','koina','enoikos'],
  mikro:['Μικροέξοδα (λάμπες, μπαταρίες, αναλώσιμα, υλικά καθαριότητας)','koina','enoikos'],apolym:['Απολύμανση / απεντόμωση','koina','enoikos'],ydravl:['Υδραυλικός / απόφραξη','koina','enoikos'],
  ilektr:['Ηλεκτρολόγος / φωτισμός / θυροτηλέφωνο','koina','enoikos'],pyrosv:['Πυροσβεστήρες – αναγόμωση / αγορά','koina','enoikos'],
  garaz:['Γκαραζόπορτα – συντήρηση / μικροεπισκευή','koina','enoikos'],garaz_ergo:['Γκαραζόπορτα – μεγάλη επισκευή / μοτέρ / αντικατάσταση','koina','idioktitis'],
@@ -109,8 +109,8 @@ const CATS={kathar:['Καθαρισμός','koina','enoikos'],kipos:['Κηπου
  asfaleia:['Ασφάλεια κτιρίου','koina','idioktitis'],apothem:['Αποθεματικό','koina','idioktitis'],diax:['Αμοιβή διαχείρισης','koina','idioktitis'],trapeza:['Έξοδα τράπεζας','isa','enoikos'],isa:['Ισόποσο (απόφαση συνέλευσης)','isa','enoikos'],allo:['Άλλο','koina','enoikos']};
 const CATRX=[[/γκαρα?ζ|γακαρζ|ρολ[οά] γκαρ/i,'garaz'],[/απολυμ|απεντομ|μυοκτον/i,'apolym'],[/απο?φρα[ξχ]|υδραυλ|αποχετ/i,'ydravl'],[/ηλεκτρολ|θυροτηλ|κουδο[υύ]ν|διακ[οό]πτ/i,'ilektr'],[/πυροσβ/i,'pyrosv'],
  [/πιστοποι.*ανελκ|πιστοποι.*ασανσ|ελε[γχ]+ος πιστοπ/i,'asanser_cert'],[/τεχνικ[οό]ς φ[αά]κελ|εργασ.*επισκευ.*ασανσ|επισκευ.*ασανσ/i,'asanser_ergo'],[/^συντ[ηή]ρηση$|συντ[ηή]ρηση ασανσ|συντ[ηή]ρηση ανελκ/i,'asanser'],
- [/καυστ|καμιν|στεγανοπ|στεγαν[οό]τ/i,'therm_syn'],[/φυσικ.?.?α[εέ]ρ|φ\.?α\.? ?παγ/i,'therm_fixed'],[/λ[αά]μπ|μπαταρ|αναλωσ|σφουγγαρ|σκο[υύ]π/i,'mikro'],
- [/^δεη$|ρε[υύ]μα/i,'dei'],[/ευδαπ|νερ[οό]/i,'eydap'],[/καθαρισ/i,'kathar'],[/κηπ/i,'kipos'],[/διαχε[ιί]ρ/i,'diax'],[/τρ[αά]πεζ/i,'trapeza'],[/ασφ[αά]λ/i,'asfaleia']];
+ [/καυστ|καμιν|στεγανοπ|στεγαν[οό]τ/i,'therm_syn'],[/δεη|ρε[υύ]μα/i,'dei'],[/φυσικ.?.?α[εέ]ρ|φ\.?α\.? ?παγ/i,'therm_fixed'],[/λ[αά]μπ|μπαταρ|αναλωσ|σφουγγαρ|σκο[υύ]π/i,'mikro'],
+ [/ευδαπ|νερ[οό]/i,'eydap'],[/καθαρισ/i,'kathar'],[/κηπ/i,'kipos'],[/διαχε[ιί]ρ/i,'diax'],[/τρ[αά]πεζ/i,'trapeza'],[/ασφ[αά]λ/i,'asfaleia']];
 const guessCat=d=>{for(const[r,c]of CATRX)if(r.test(d||''))return c;return''};
 const MONTHS=['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -698,6 +698,7 @@ const evOpen=()=>(S.events||[]).filter(x=>x.todo&&!x.doneAt).sort((a,b)=>a.date.
 
 /* ---------------- τι νέο ---------------- */
 const CHANGELOG=[
+ ['28/11 β',['Η κατηγορία «ΔΕΗ κοινοχρήστων» λέγεται πλέον «Ρεύμα κοινοχρήστων» (πάροχος είναι η εταιρεία φυσικού αερίου)','Το «ΔΕΗ (φυσικό αέριο)» της Polygon αναγνωρίζεται σωστά ως ρεύμα κοινοχρήστων και όχι ως θέρμανση','Μετρητές: αν δεν άλλαξε κανένας, μπορείς να καταχωρίσεις καταμέτρηση με τις ίδιες ενδείξεις (σημείο αρχής θέρμανσης)']],
  ['28/11 α',['Νέα καρτέλα «Δαπάνες έτους» (και από το κουτάκι στα Γενικά): λίστα όλων των εξόδων ανά μήνα με ημερομηνία, κατηγορία, συνεργασία, αν πληρώθηκε, αναζήτηση, φίλτρο κατηγορίας, σύνολα ανά κατηγορία και εκτύπωση','Πεδίο «Ημερομηνία» σε κάθε δαπάνη','Το γενικό φύλλο στο κινητό δεν στριμώχνεται πια: σύρε δεξιά-αριστερά']],
  ['27/11 στ',['Νέα σελίδα «Συμβάντα»: ημερολόγιο του διαχειριστή με είδος, συνεργασία, διαμέρισμα, εκτίμηση κόστους, φωτογραφία/PDF, αναζήτηση και εκτύπωση','Σχόλια σε κάθε συνεργασία (π.χ. «το μοτέρ θέλει αλλαγή»), με σήμανση «εκκρεμεί» που εμφανίζεται στις εκκρεμότητες']],
  ['27/11 ε',['Φωτογραφία ή PDF παραστατικού σε κάθε δαπάνη (📎) — το βλέπουν και οι ένοικοι','Ημερολόγιο υποχρεώσεων (πιστοποίηση ανελκυστήρα, καυστήρας, πυροσβεστήρες, ασφάλεια, συνέλευση) με υπενθύμιση','Πρόβλεψη επόμενου μήνα και σήμανση «↑» για ασυνήθιστα μεγάλες δαπάνες','Ψηφοφορίες με χιλιοστά','Email στον ένοικο όταν αλλάζει η κατάσταση του αιτήματός του','Αυτόματο αντίγραφο Excel με email και στο Google Drive μετά από κάθε έκδοση','Εγκατάσταση στο κινητό σαν εφαρμογή']],
@@ -1062,7 +1063,7 @@ function bind(){
   $('#msave').onclick=()=>{const vals={};let bad='';$$('[data-mn]').forEach(i=>{const v=i.value.trim();if(!v)return;const x=num(v.replace(',','.')),l=lv[i.dataset.mn];if(l&&x<l.val)bad=allMeters().find(m=>m.id===i.dataset.mn).label;vals[i.dataset.mn]=x});
    if(bad&&!confirm('Ο μετρητής '+bad+' έχει μικρότερη ένδειξη από την προηγούμενη. Να καταχωριστεί;'))return;
    const date=$('#mdt').value||today();const first=!(S.meterLog||[]).length;if(first)for(const m of allMeters())if(vals[m.id]==null&&lv[m.id])vals[m.id]=lv[m.id].val;
-   if(!Object.keys(vals).length){toast('Δεν άλλαξε κανένας μετρητής');return}
+   if(!Object.keys(vals).length){if(!confirm('Δεν έγραψες καμία νέα ένδειξη. Να καταχωριστεί καταμέτρηση με τις ίδιες ενδείξεις στις '+fdate(date)+'; (π.χ. ξεκίνημα θέρμανσης, για να υπάρχει σημείο αρχής)'))return;for(const m of allMeters())if(lv[m.id])vals[m.id]=lv[m.id].val;if(!Object.keys(vals).length)return}
    S.meterLog=S.meterLog||[];const same=S.meterLog.find(x=>x.date===date);if(same)Object.assign(same.vals,vals);else S.meterLog.push({id:uid(),date,t:Date.now(),vals});mdate='';save();toast('Καταχωρίστηκε η καταμέτρηση '+fdate(date))}}
  $$('[data-mdel]').forEach(b=>b.onclick=()=>{if(!confirm('Διαγραφή αυτής της καταμέτρησης;'))return;S.meterLog=S.meterLog.filter(x=>x.id!==b.dataset.mdel);save()});
  $$('[data-go]').forEach(k=>k.onclick=()=>{const[pg,f]=k.dataset.go.split('|');page=pg;editId=null;if(pg==='bills')sub=f;if(pg==='bpay')cbf=f;if(pg==='tx')txf=f;render();setTimeout(()=>{const t=document.getElementById(pg==='tx'?'balcard':f==='unpaid'?'unpcard':'cbcard');t&&t.scrollIntoView({behavior:'smooth'})},50)});
